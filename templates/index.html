@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>CGO Filter</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f4f4f4;
+      padding: 40px;
+      text-align: center;
+    }
+
+    h1 {
+      font-size: 36px;
+      color: #007BFF;
+      margin-bottom: 30px;
+    }
+
+    input[type="text"] {
+      padding: 10px;
+      width: 300px;
+      font-size: 16px;
+      border: 2px solid #007BFF;
+      border-radius: 5px;
+    }
+
+    button {
+      padding: 10px 20px;
+      font-size: 16px;
+      margin-left: 10px;
+      background-color: #007BFF;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background-color: #0056b3;
+    }
+
+    #resultados {
+      margin-top: 40px;
+      max-width: 95%;
+      margin-left: auto;
+      margin-right: auto;
+      text-align: left;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 40px;
+      background-color: white;
+    }
+
+    th, td {
+      border: 1px solid #ccc;
+      padding: 10px;
+      text-align: center;
+    }
+
+    th {
+      background-color: #007BFF;
+      color: white;
+    }
+
+    .gerencia-title {
+      margin: 30px 0 10px;
+      font-size: 20px;
+      color: #333;
+    }
+  </style>
+</head>
+<body>
+  <h1>CGO FILTER</h1>
+
+  <input type="text" id="cellid" placeholder="🔍 Ingrese el Cell-ID" maxlength="7" />
+  <button id="buscar">Buscar</button>
+  <!-- <div id="mensaje-carga" style="margin-top: 20px; font-weight: bold; color: #007BFF;"></div> -->
+
+  <div id="resultados"></div>
+
+  <script>
+    document.getElementById("buscar").addEventListener("click", function () {
+      const cellid = document.getElementById("cellid").value.trim();
+      if (!cellid) {
+        alert("Por favor, ingrese un Cell-ID válido.");
+        return;
+      }
+
+      fetch(`/buscar?cellid=${encodeURIComponent(cellid)}`)
+        .then(res => res.json())
+        .then(data => {
+          const contenedor = document.getElementById("resultados");
+          contenedor.innerHTML = "";
+
+          if (Object.keys(data).length === 0) {
+            contenedor.innerHTML = "<p>No se encontraron resultados para ese Cell-ID.</p>";
+            return;
+          }
+
+          for (const ger in data) {
+            const h2 = document.createElement("h2");
+            h2.className = "gerencia-title";
+            h2.textContent = `Gerencia: ${ger}`;
+            contenedor.appendChild(h2);
+
+            const tabla = document.createElement("table");
+            const thead = document.createElement("thead");
+            thead.innerHTML = `
+              <tr>
+                <th>CELL-ID</th>
+                <th>FECHA</th>
+                <th>ALERTA</th>
+                <th>TIEMPO</th>
+                <th>OWNER</th>
+                <th>SITIO</th>
+              </tr>
+            `;
+            tabla.appendChild(thead);
+
+            const tbody = document.createElement("tbody");
+            data[ger].forEach(reg => {
+              const fila = document.createElement("tr");
+              fila.innerHTML = `
+                <td>${reg["CELL-ID"]}</td>
+                <td>${reg["FECHA"]}</td>
+                <td>${reg["ALERTA"]}</td>
+                <td>${reg["TIEMPO"]}</td>
+                <td>${reg["OWNER"]}</td>
+                <td>${reg["SITIO"]}</td>
+              `;
+              tbody.appendChild(fila);
+            });
+
+            tabla.appendChild(tbody);
+            contenedor.appendChild(tabla);
+          }
+        })
+        .catch(err => {
+          document.getElementById("resultados").innerHTML = "<p style='color:red;'>Error consultando el servidor.</p>";
+          console.error("Error:", err);
+        });
+    });
+  </script>
+</body>
+</html>
