@@ -1,22 +1,10 @@
-{
-    "CF01149": {
-        "CFBA": [
-            {
-                "CELL-ID": "CF01149",
-                "FECHA": "07/03/2025_20:39:00",
-                "ALERTA": "CORTE DE ENERGIA COMERCIAL...",
-                "TIEMPO": "035 d 13 h 17 m",
-                "OWNER": "Felix Blanco",
-                "SITIO": "Moreno 3"
-            },
-            {
-                "CELL-ID": "CF01149",
-                "FECHA": "07/03/2025_20:39:00",
-                "ALERTA": "CORTE DE ENERGIA COMERCIAL...",
-                "TIEMPO": "035 d 13 h 17 m",
-                "OWNER": "Felix Blanco",
-                "SITIO": "Moreno 3"
-            }
-        ]
+[
+    {
+        "site_id": "CF01011",
+        "FECHA": "15/04/2025_16:52:00",
+        "alarma": "PUERTA ABIERTA DEL GENERADOR...",
+        "TIEMPO": "000 d 04 h 12 m",
+        "OWNER": "Juan Manuel Barragan",
+        "SITIO": "Puente Ezcurra"
     }
-}
+]

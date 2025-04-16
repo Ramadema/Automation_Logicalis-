@@ -2,6 +2,7 @@ import requests
 from bs4 import BeautifulSoup
 from tabulate import tabulate
 import json
+import os
 
 # URLs por gerencia
 gerencias = {
@@ -13,17 +14,35 @@ gerencias = {
 }
 
 # Columnas ordenadas para mostrar
-column_order = ["CELL-ID", "FECHA", "ALERTA", "TIEMPO", "OWNER", "SITIO"]
+column_order = ["site_id", "FECHA", "alarma", "TIEMPO", "OWNER", "SITIO"]
 
-# Bucle principal
+# Borro el contenido del archivo JSON al iniciar
+with open("registros_cellid.json", "w", encoding="utf-8") as f:
+    json.dump([], f)
+
+# Menú principal
+def mostrar_menu():
+    print("=== MENÚ PRINCIPAL ===")
+    print("1. Estado del Sitio (buscar Cell-ID)")
+    print("2. Salir")
+
+# Bucle principal del menú
 while True:
-    cell_id_buscado = input("\nIngrese el Cell-ID que desea buscar (o escriba 'salir' para terminar): ").strip().upper()
+    os.system('cls' if os.name == 'nt' else 'clear')
+    mostrar_menu()
+    opcion = input("Seleccione una opción: ").strip()
+    os.system('cls' if os.name == 'nt' else 'clear')
 
-    if cell_id_buscado.lower() == "salir":
+    if opcion == "2":
         print("Finalizando el programa.")
         break
+    elif opcion != "1":
+        print("❌ Opción no válida. Intente de nuevo.\n")
+        continue
 
-    resultados_por_gerencia = {}
+    # Si eligió opción 1
+    cell_id_buscado = input("\nIngrese el Cell-ID que desea buscar: ").strip().upper()
+    resultados = []
 
     for nombre, url in gerencias.items():
         print(f"🔎 Buscando en {nombre}...", end="")
@@ -36,37 +55,37 @@ while True:
 
             soup = BeautifulSoup(response.text, "html.parser")
             filas = soup.find_all("tr")
-            registros = []
 
             for fila in filas:
                 columnas = fila.find_all("td")
                 if columnas and columnas[0].text.strip() == cell_id_buscado:
-                    registros.append({
-                        "CELL-ID": columnas[0].text.strip(),
+                    resultados.append({
+                        "site_id": columnas[0].text.strip(),
                         "FECHA": columnas[-3].text.strip(),
-                        "ALERTA": columnas[-1].text.strip()[:120] + "...",
+                        "alarma": columnas[-1].text.strip()[:120] + "...",
                         "TIEMPO": columnas[-2].text.strip(),
                         "OWNER": columnas[2].text.strip(),
                         "SITIO": columnas[1].text.strip()
                     })
 
-            if registros:
-                resultados_por_gerencia[nombre] = registros
+            if resultados:
                 print(" ✅ encontrado.")
                 print(f"--- RESULTADOS EN {nombre} ---")
-                tabla_ordenada = [[r[col] for col in column_order] for r in registros]
+                tabla_ordenada = [[r[col] for col in column_order] for r in resultados]
                 print(tabulate(tabla_ordenada, headers=column_order, tablefmt="grid"))
                 print("\n")
+                break  
             else:
-                print("\r", end="")  # Silencio si no hay resultado
+                print("\r", end="")
 
         except requests.RequestException as e:
             print(f"\n❌ Error accediendo a {nombre}: {e}")
 
-    if resultados_por_gerencia:
+    if resultados:
         with open("registros_cellid.json", "w", encoding="utf-8") as f:
-            json.dump({cell_id_buscado: resultados_por_gerencia}, f, indent=4, ensure_ascii=False)
+            json.dump(resultados, f, indent=4, ensure_ascii=False)
 
         print("✅ Archivo 'registros_cellid.json' actualizado con los resultados de la búsqueda.\n")
+        input("⬇️​Presione enter para continuar con el menu⬇️​")
     else:
-        print("⚠️ No se encontró información en ninguna gerencia para ese Cell-ID.\n")
+        print("⚠️ No se encontró información para ese Cell-ID.\n")
