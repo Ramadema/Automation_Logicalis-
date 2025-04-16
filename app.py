@@ -46,6 +46,7 @@ while True:
     resultados = []
 
     for nombre, url in gerencias.items():
+        inicio = time.time()
         print(f"🔎 Buscando en {nombre}...", end="")
 
         try:
