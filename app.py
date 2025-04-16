@@ -3,6 +3,7 @@ from bs4 import BeautifulSoup
 from tabulate import tabulate
 import json
 import os
+import time
 
 # URLs por gerencia
 gerencias = {
@@ -14,7 +15,7 @@ gerencias = {
 }
 
 # Columnas ordenadas para mostrar
-column_order = ["site_id", "FECHA", "alarma", "TIEMPO", "OWNER", "SITIO"]
+column_order = ["site_id", "fecha_creacion", "alarma", "TIEMPO", "cell_owner", "site_name"]
 
 # Borro el contenido del archivo JSON al iniciar
 with open("registros_cellid.json", "w", encoding="utf-8") as f:
@@ -61,11 +62,11 @@ while True:
                 if columnas and columnas[0].text.strip() == cell_id_buscado:
                     resultados.append({
                         "site_id": columnas[0].text.strip(),
-                        "FECHA": columnas[-3].text.strip(),
+                        "fecha_creacion": columnas[-3].text.strip(),
                         "alarma": columnas[-1].text.strip()[:120] + "...",
                         "TIEMPO": columnas[-2].text.strip(),
-                        "OWNER": columnas[2].text.strip(),
-                        "SITIO": columnas[1].text.strip()
+                        "cell_owner": columnas[2].text.strip(),
+                        "site_name": columnas[1].text.strip()
                     })
 
             if resultados:
@@ -85,6 +86,7 @@ while True:
         with open("registros_cellid.json", "w", encoding="utf-8") as f:
             json.dump(resultados, f, indent=4, ensure_ascii=False)
 
+        print(f"⏱ Tiempo total: {time.time() - inicio:.2f} segundos")
         print("✅ Archivo 'registros_cellid.json' actualizado con los resultados de la búsqueda.\n")
         input("⬇️​Presione enter para continuar con el menu⬇️​")
     else:

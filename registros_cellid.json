@@ -1,10 +1,10 @@
 [
     {
-        "site_id": "CF01011",
-        "FECHA": "15/04/2025_16:52:00",
-        "alarma": "PUERTA ABIERTA DEL GENERADOR...",
-        "TIEMPO": "000 d 04 h 12 m",
-        "OWNER": "Juan Manuel Barragan",
-        "SITIO": "Puente Ezcurra"
+        "site_id": "CF01548",
+        "fecha_creacion": "14/04/2025_09:05:00",
+        "alarma": "FUNCIONAMIENTO DEL GENERADOR...",
+        "TIEMPO": "002 d 00 h 25 m",
+        "cell_owner": "Juan Manuel Barragan",
+        "site_name": "San Miguel 11"
     }
 ]
