@@ -6,12 +6,23 @@ import json
 import time
 import sys
 
+# Función para limpiar texto
+def limpiar(texto):
+    return texto.strip().replace('\n', ' ').replace('\r', '')
+
+# Función para formatear Cell-ID: 2 letras + 5 números (rellenados con ceros)
+def formatear_cellid(cellid):
+    letras = ''.join(filter(str.isalpha, cellid))[:2].upper()
+    numeros = ''.join(filter(str.isdigit, cellid)).zfill(5)
+    return letras + numeros
+
 # Leer el argumento
 if len(sys.argv) < 2:
     print("❌ Debes pasar el Cell-ID como argumento.")
     sys.exit(1)
 
-cell_id_buscado = sys.argv[1].strip().upper()
+# Formatear el Cell-ID
+cell_id_buscado = formatear_cellid(sys.argv[1].strip())
 resultados = []
 
 # URLs por gerencia
@@ -25,9 +36,6 @@ gerencias = {
 
 column_order = ["site_id", "fecha_creacion", "alarma", "TIEMPO", "cell_owner", "site_name"]
 
-def limpiar(texto):
-    return texto.strip().replace('\n', ' ').replace('\r', '')
-
 def buscar_en_gerencia(nombre, url):
     try:
         response = requests.get(url, timeout=10)
@@ -40,7 +48,7 @@ def buscar_en_gerencia(nombre, url):
 
         for fila in filas:
             columnas = fila.find_all("td")
-            if columnas and columnas[0].text.strip() == cell_id_buscado:
+            if columnas and columnas[0].text.strip().upper() == cell_id_buscado:
                 encontrados.append({
                     "site_id": limpiar(columnas[0].text),
                     "fecha_creacion": limpiar(columnas[-3].text),
@@ -74,7 +82,6 @@ if resultados:
     print("✅ Archivo actualizado.\n")
 
     # Salida final en JSON para que Flask pueda capturarla
-    
     print(json.dumps(resultados, ensure_ascii=False))
 else:
     print("⚠️ No se encontró información para ese Cell-ID.\n")
