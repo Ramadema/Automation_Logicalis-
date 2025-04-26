@@ -26,17 +26,15 @@ urls_por_gerencia = {
     "BLAP": "http://10.92.62.254/giraweb/index-tab.php?gerencia=BLAP"
 }
 
-# Formatear Cell-ID
+# Funciones auxiliares
 def formatear_cellid(cellid):
     letras = ''.join(filter(str.isalpha, cellid)).upper()
     numeros = ''.join(filter(str.isdigit, cellid)).zfill(5)
     return letras + numeros
 
-# Limpiar texto
 def limpiar(texto):
     return texto.strip().replace('\n', ' ').replace('\r', '')
 
-# Convertir TIEMPO a días
 def tiempo_en_dias(tiempo_texto):
     if not tiempo_texto:
         return 9999
@@ -55,7 +53,23 @@ def tiempo_en_dias(tiempo_texto):
     total_dias = dias + horas/24 + minutos/1440
     return total_dias
 
-# Leer argumento
+# Nueva función para validar solo filas de ALARMAS
+def es_fila_alarma_valida(columnas):
+    if len(columnas) != 6:
+        return False
+
+    site_id = limpiar(columnas[0].get_text(strip=True)).upper()
+    ultima_columna = limpiar(columnas[-1].get_text(strip=True)).lower()
+
+    if not (site_id.isalnum() and any(c.isalpha() for c in site_id) and any(c.isdigit() for c in site_id)):
+        return False
+
+    if ultima_columna.startswith(("+54", "sin salida", "sms", "whatsapp")):
+        return False
+
+    return True
+
+# Comienza el flujo principal
 if len(sys.argv) < 2:
     print("❌ Debes pasar el Cell-ID como argumento.")
     sys.exit(1)
@@ -63,11 +77,10 @@ if len(sys.argv) < 2:
 cell_id_input = sys.argv[1].strip()
 cell_id_buscado = formatear_cellid(cell_id_input)
 
-# Detectar el prefijo correcto
+# Detectar la gerencia correspondiente
+solo_letras = ''.join(filter(str.isalpha, cell_id_input)).upper()
 prefijo_detectado = None
 gerencia_objetivo = None
-
-solo_letras = ''.join(filter(str.isalpha, cell_id_input)).upper()
 
 for gerencia, prefijos in prefijos_por_gerencia.items():
     for prefijo in prefijos:
@@ -82,12 +95,12 @@ if not gerencia_objetivo:
     print(f"⚠️ No se encontró ninguna gerencia que maneje el prefijo de '{cell_id_input}'")
     sys.exit(0)
 
-print(f"🎯 Buscando Cell-ID '{cell_id_buscado}' en gerencia: {gerencia_objetivo}")
+print(f"... Buscando Cell-ID '{cell_id_buscado}' en gerencia: {gerencia_objetivo}")
 
-# Columnas a mostrar
+# Orden de columnas a mostrar
 column_order = ["site_id", "fecha_creacion", "alarma", "TIEMPO", "cell_owner", "site_name"]
 
-# Función de búsqueda
+# Función para buscar alarmas
 def buscar_en_gerencia(nombre, url, session):
     try:
         t0 = time.time()
@@ -104,26 +117,20 @@ def buscar_en_gerencia(nombre, url, session):
 
         for fila in filas:
             columnas = fila.find_all("td")
-            if columnas and len(columnas) == 6:
+            if columnas and es_fila_alarma_valida(columnas):
                 cell_id_actual = limpiar(columnas[0].get_text(strip=True)).upper()
-
                 if cell_id_actual == cell_id_buscado:
                     tiempo_texto = limpiar(columnas[-2].get_text(strip=True))
-
-                    # Filtro: solo TIEMPO menor a 3 días
                     if tiempo_en_dias(tiempo_texto) < 3:
-
-                        # Filtro: alarma real (no número de teléfono ni "sin salida")
                         texto_alarma = limpiar(columnas[-1].get_text(strip=True))
-                        if not texto_alarma.lower().startswith(("+54", "sin salida", "sms", "whatsapp")):
-                            encontrados.append({
-                                "site_id": limpiar(columnas[0].get_text(strip=True)),
-                                "fecha_creacion": limpiar(columnas[-3].get_text(strip=True)),
-                                "alarma": texto_alarma[:120] + "...",
-                                "TIEMPO": tiempo_texto,
-                                "cell_owner": limpiar(columnas[2].get_text(strip=True)),
-                                "site_name": limpiar(columnas[1].get_text(strip=True))
-                            })
+                        encontrados.append({
+                            "site_id": cell_id_actual,
+                            "fecha_creacion": limpiar(columnas[-3].get_text(strip=True)),
+                            "alarma": texto_alarma[:120] + "...",
+                            "TIEMPO": tiempo_texto,
+                            "cell_owner": limpiar(columnas[2].get_text(strip=True)),
+                            "site_name": limpiar(columnas[1].get_text(strip=True))
+                        })
 
         return encontrados
 
@@ -131,7 +138,7 @@ def buscar_en_gerencia(nombre, url, session):
         print(f"⚠️ Error en {nombre}: {e}")
         return []
 
-# Ejecutar búsqueda
+# Ejecutar búsqueda en la gerencia correspondiente
 inicio_total = time.time()
 session = requests.Session()
 resultados = []
@@ -145,7 +152,7 @@ with ThreadPoolExecutor(max_workers=2) as executor:
             resultados = resultado
             break
 
-# Mostrar resultados
+# Mostrar y guardar resultados
 if resultados:
     tabla_ordenada = [[r[col] for col in column_order] for r in resultados]
     print(tabulate(tabla_ordenada, headers=column_order, tablefmt="grid"))
