@@ -1,6 +1,5 @@
-#Versión optimizada con asyncio y aiohttp, que reduce tiempos de búsqueda al máximo. Usa User-Agent de navegador para evitar bloqueos y filtra resultados directamente durante el scraping, mejorando velocidad y eficiencia.
-
-
+#Versión optimizada con asyncio y aiohttp, que reduce tiempos de búsqueda al máximo.
+# Usa User-Agent de navegador para evitar bloqueos y filtra resultados directamente durante el scraping, mejorando velocidad y eficiencia.
 
 import asyncio
 import aiohttp
@@ -123,5 +122,7 @@ async def main():
             print("⚠️ No se encontró información para ese Cell-ID o todas superan 3 días.\n")
             print(json.dumps({"error": "No se encontró información válida para ese Cell-ID"}, ensure_ascii=False))
 
-# Ejecutar
-asyncio.run(main())
+# 🚀 Ejecución adaptada para Python 3.6:
+if __name__ == "__main__":
+    loop = asyncio.get_event_loop()
+    loop.run_until_complete(main())
