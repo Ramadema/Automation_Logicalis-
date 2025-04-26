@@ -1,34 +1,10 @@
 [
     {
-        "site_id": "ME00006",
-        "fecha_creacion": "0",
-        "alarma": "...",
-        "TIEMPO": "25/04/2025_09:35:00",
-        "cell_owner": "Fabricio Belmonte",
-        "site_name": "ALVEAR"
-    },
-    {
-        "site_id": "ME00006",
-        "fecha_creacion": "25/04/2025_08:48:00",
-        "alarma": "PUERTA ABIERTA - SHELTER...",
-        "TIEMPO": "000 d 01 h 26 m",
-        "cell_owner": "Fabricio Belmonte",
-        "site_name": "ALVEAR"
-    },
-    {
-        "site_id": "ME00006",
-        "fecha_creacion": "Sin salida",
-        "alarma": "+5492617450408...",
-        "TIEMPO": "MARIO ANTONIO PIAGGESI de la empresa ELECTROLUKA.",
-        "cell_owner": "Sin salida",
-        "site_name": "25/04/2025_08:45:20"
-    },
-    {
-        "site_id": "ME00006",
-        "fecha_creacion": "DOCTA TELECOMUNICACIONES",
-        "alarma": "TRABAJO EN MTSO: INSTALACION DE EQUIPOS/CABLEADOS   S/AFECTACION...",
-        "TIEMPO": "Aceptado",
-        "cell_owner": "9/04/2025",
-        "site_name": "5/04/2025"
+        "site_id": "CF00694",
+        "site_name": "Santa Catalina",
+        "cell_owner": "Diego Gaston Lavalleto Castro",
+        "fecha_creacion": "25/04/2025_21:23:00",
+        "TIEMPO": "000 d 15 h 43 m",
+        "alarma": "CORTE DE ENERGIA COMERCIAL..."
     }
 ]

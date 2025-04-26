@@ -1,3 +1,5 @@
+#Versión multihilo tradicional que busca en todas las gerencias usando ThreadPoolExecutor con 5 workers. Se destaca por su simplicidad, buena velocidad de respuesta y robustez al combinar requests con filtrado básico durante el scraping.
+
 from concurrent.futures import ThreadPoolExecutor, as_completed
 import requests
 from bs4 import BeautifulSoup
@@ -6,11 +8,9 @@ import json
 import time
 import sys
 
-# Función para limpiar texto
 def limpiar(texto):
     return texto.strip().replace('\n', ' ').replace('\r', '')
 
-# Función para formatear Cell-ID: 2 letras + 5 números (rellenados con ceros)
 def formatear_cellid(cellid):
     letras = ''.join(filter(str.isalpha, cellid))[:2].upper()
     numeros = ''.join(filter(str.isdigit, cellid)).zfill(5)
@@ -21,11 +21,9 @@ if len(sys.argv) < 2:
     print("❌ Debes pasar el Cell-ID como argumento.")
     sys.exit(1)
 
-# Formatear el Cell-ID
 cell_id_buscado = formatear_cellid(sys.argv[1].strip())
 resultados = []
 
-# URLs por gerencia
 gerencias = {
     "CFBA": "http://10.92.62.254/giraweb/index-tab.php?gerencia=CFBA",
     "PACU": "http://10.92.62.254/giraweb/index-tab.php?gerencia=PACU",
@@ -36,9 +34,10 @@ gerencias = {
 
 column_order = ["site_id", "fecha_creacion", "alarma", "TIEMPO", "cell_owner", "site_name"]
 
-def buscar_en_gerencia(nombre, url):
+def buscar_en_gerencia(session, nombre, url):
     try:
-        response = requests.get(url, timeout=10)
+        inicio = time.time()
+        response = session.get(url, timeout=5)
         if response.status_code != 200:
             return []
 
@@ -48,24 +47,31 @@ def buscar_en_gerencia(nombre, url):
 
         for fila in filas:
             columnas = fila.find_all("td")
-            if columnas and columnas[0].text.strip().upper() == cell_id_buscado:
-                encontrados.append({
-                    "site_id": limpiar(columnas[0].text),
-                    "fecha_creacion": limpiar(columnas[-3].text),
-                    "alarma": limpiar(columnas[-1].text)[:120] + "...",
-                    "TIEMPO": limpiar(columnas[-2].text),
-                    "cell_owner": limpiar(columnas[2].text),
-                    "site_name": limpiar(columnas[1].text)
-                })
-
+            if columnas and len(columnas) == 6:  # ⚡ Solo procesar filas que tienen 6 columnas (las verdes)
+                cell_id_actual = limpiar(columnas[0].text).upper()
+                if cell_id_actual == cell_id_buscado:
+                    encontrados.append({
+                        "site_id": cell_id_actual,
+                        "site_name": limpiar(columnas[1].text),
+                        "cell_owner": limpiar(columnas[2].text),
+                        "fecha_creacion": limpiar(columnas[3].text),
+                        "TIEMPO": limpiar(columnas[4].text),
+                        "alarma": limpiar(columnas[5].text)[:120] + "..."
+                    })
+        
+        print(f"🔎 {nombre} terminado en {time.time() - inicio:.2f} segundos.")
         return encontrados
     except Exception as e:
+        print(f"⚠️ Error buscando en {nombre}: {str(e)}")
         return []
 
+# 🕑 Medir tiempo total
 inicio_total = time.time()
 
+session = requests.Session()
+
 with ThreadPoolExecutor(max_workers=5) as executor:
-    futuros = {executor.submit(buscar_en_gerencia, nombre, url): nombre for nombre, url in gerencias.items()}
+    futuros = {executor.submit(buscar_en_gerencia, session, nombre, url): nombre for nombre, url in gerencias.items()}
     for futuro in as_completed(futuros):
         resultados = futuro.result()
         if resultados:
@@ -80,8 +86,6 @@ if resultados:
 
     print(f"\n⏱ Tiempo total: {time.time() - inicio_total:.2f} segundos")
     print("✅ Archivo actualizado.\n")
-
-    # Salida final en JSON para que Flask pueda capturarla
     print(json.dumps(resultados, ensure_ascii=False))
 else:
     print("⚠️ No se encontró información para ese Cell-ID.\n")
