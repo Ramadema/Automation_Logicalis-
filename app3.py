@@ -1,4 +1,4 @@
-#Versión optimizada con detección automática de prefijo y búsqueda directa en la gerencia correcta, reduciendo tiempos de consulta. Usa requests con ThreadPoolExecutor, mejora el parsing con lxml y agiliza aún más al limitar la concurrencia solo a la gerencia necesaria.
+#Versión optimizada que busca directamente en la gerencia correspondiente, filtrando solo alarmas reales y registros cuyo tiempo sea menor a 3 días. Usa requests con ThreadPoolExecutor para acelerar la consulta y BeautifulSoup con lxml para un parsing HTML más rápido y eficiente.
 
 from concurrent.futures import ThreadPoolExecutor, as_completed
 import requests
@@ -8,7 +8,7 @@ import json
 import time
 import sys
 
-# 🔥 Mapeo manual de prefijos
+# Mapeo manual de prefijos
 prefijos_por_gerencia = {
     "CFBA": ["CF"],
     "PACU": ["ME", "SJ", "SL", "COW", "SC", "CB", "TF", "RN", "NQ"],
@@ -17,7 +17,7 @@ prefijos_por_gerencia = {
     "BLAP": ["BA", "PA", "PAR"]
 }
 
-# 🌐 URLs por gerencia
+# URLs por gerencia
 urls_por_gerencia = {
     "CFBA": "http://10.92.62.254/giraweb/index-tab.php?gerencia=CFBA",
     "PACU": "http://10.92.62.254/giraweb/index-tab.php?gerencia=PACU",
@@ -26,17 +26,36 @@ urls_por_gerencia = {
     "BLAP": "http://10.92.62.254/giraweb/index-tab.php?gerencia=BLAP"
 }
 
-# 🔠 Formatear Cell-ID (dinámico para 2 o 3 letras)
+# Formatear Cell-ID
 def formatear_cellid(cellid):
     letras = ''.join(filter(str.isalpha, cellid)).upper()
     numeros = ''.join(filter(str.isdigit, cellid)).zfill(5)
     return letras + numeros
 
-# 🧼 Limpiar texto
+# Limpiar texto
 def limpiar(texto):
     return texto.strip().replace('\n', ' ').replace('\r', '')
 
-# 📥 Leer argumento
+# Convertir TIEMPO a días
+def tiempo_en_dias(tiempo_texto):
+    if not tiempo_texto:
+        return 9999
+
+    dias = horas = minutos = 0
+    partes = tiempo_texto.split()
+
+    for i, parte in enumerate(partes):
+        if parte == 'd':
+            dias = int(partes[i-1])
+        elif parte == 'h':
+            horas = int(partes[i-1])
+        elif parte == 'm':
+            minutos = int(partes[i-1])
+
+    total_dias = dias + horas/24 + minutos/1440
+    return total_dias
+
+# Leer argumento
 if len(sys.argv) < 2:
     print("❌ Debes pasar el Cell-ID como argumento.")
     sys.exit(1)
@@ -44,7 +63,7 @@ if len(sys.argv) < 2:
 cell_id_input = sys.argv[1].strip()
 cell_id_buscado = formatear_cellid(cell_id_input)
 
-# 🔍 Detectar el prefijo correcto
+# Detectar el prefijo correcto
 prefijo_detectado = None
 gerencia_objetivo = None
 
@@ -65,9 +84,10 @@ if not gerencia_objetivo:
 
 print(f"🎯 Buscando Cell-ID '{cell_id_buscado}' en gerencia: {gerencia_objetivo}")
 
+# Columnas a mostrar
 column_order = ["site_id", "fecha_creacion", "alarma", "TIEMPO", "cell_owner", "site_name"]
 
-# 🔎 Función de búsqueda
+# Función de búsqueda
 def buscar_en_gerencia(nombre, url, session):
     try:
         t0 = time.time()
@@ -84,22 +104,34 @@ def buscar_en_gerencia(nombre, url, session):
 
         for fila in filas:
             columnas = fila.find_all("td")
-            if columnas and columnas[0].get_text(strip=True).upper() == cell_id_buscado:
-                encontrados.append({
-                    "site_id": limpiar(columnas[0].get_text(strip=True)),
-                    "fecha_creacion": limpiar(columnas[-3].get_text(strip=True)),
-                    "alarma": limpiar(columnas[-1].get_text(strip=True))[:120] + "...",
-                    "TIEMPO": limpiar(columnas[-2].get_text(strip=True)),
-                    "cell_owner": limpiar(columnas[2].get_text(strip=True)),
-                    "site_name": limpiar(columnas[1].get_text(strip=True))
-                })
+            if columnas and len(columnas) == 6:
+                cell_id_actual = limpiar(columnas[0].get_text(strip=True)).upper()
+
+                if cell_id_actual == cell_id_buscado:
+                    tiempo_texto = limpiar(columnas[-2].get_text(strip=True))
+
+                    # Filtro: solo TIEMPO menor a 3 días
+                    if tiempo_en_dias(tiempo_texto) < 3:
+
+                        # Filtro: alarma real (no número de teléfono ni "sin salida")
+                        texto_alarma = limpiar(columnas[-1].get_text(strip=True))
+                        if not texto_alarma.lower().startswith(("+54", "sin salida", "sms", "whatsapp")):
+                            encontrados.append({
+                                "site_id": limpiar(columnas[0].get_text(strip=True)),
+                                "fecha_creacion": limpiar(columnas[-3].get_text(strip=True)),
+                                "alarma": texto_alarma[:120] + "...",
+                                "TIEMPO": tiempo_texto,
+                                "cell_owner": limpiar(columnas[2].get_text(strip=True)),
+                                "site_name": limpiar(columnas[1].get_text(strip=True))
+                            })
 
         return encontrados
+
     except Exception as e:
         print(f"⚠️ Error en {nombre}: {e}")
         return []
 
-# 🚀 Ejecutar búsqueda
+# Ejecutar búsqueda
 inicio_total = time.time()
 session = requests.Session()
 resultados = []
@@ -113,7 +145,7 @@ with ThreadPoolExecutor(max_workers=2) as executor:
             resultados = resultado
             break
 
-# 📊 Mostrar resultados
+# Mostrar resultados
 if resultados:
     tabla_ordenada = [[r[col] for col in column_order] for r in resultados]
     print(tabulate(tabla_ordenada, headers=column_order, tablefmt="grid"))
@@ -125,5 +157,5 @@ if resultados:
     print("✅ Archivo actualizado.\n")
     print(json.dumps(resultados, ensure_ascii=False))
 else:
-    print("⚠️ No se encontró información para ese Cell-ID.\n")
-    print(json.dumps({"error": "No se encontró información para ese Cell-ID"}, ensure_ascii=False))
+    print("⚠️ No se encontró información válida para ese Cell-ID.\n")
+    print(json.dumps({"error": "No se encontró información válida para ese Cell-ID"}, ensure_ascii=False))
