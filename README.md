@@ -61,3 +61,6 @@ C:\Users\TU_USUARIO\.local\bin
 ---
 
 > Si tenés cualquier duda sobre la instalación, podés abrir un issue o consultarme a mi sin drama 
+
+> Se pienza agregar una salida completa por json.
+> Aplicacion de WILAB sobre la appProdu
