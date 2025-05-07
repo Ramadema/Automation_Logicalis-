@@ -4,16 +4,16 @@ warnings.filterwarnings("ignore")
 
 import requests
 from bs4 import BeautifulSoup
-from tabulate import tabulate
 import json
 import time
 import sys
 import asyncio
 import aiohttp
 import ssl
+
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
-# -------------------- PARTE 1: SGI (wilab) -------------------- #
+# --- CONFIGURACIÓN SGI ---
 LOGIN_URL = "https://sgi.claro.amx/auth/local"
 GRAPHQL_URL = "https://sgi.claro.amx/api/graphql"
 
@@ -52,6 +52,16 @@ query EVENTS_AND_DEVICES($client_id: String!) {
 }
 """
 
+# --- FUNCIONES AUXILIARES GENERALES ---
+def limpiar(texto):
+    return texto.strip().replace('\n', ' ').replace('\r', '')
+
+def formatear_cellid(cellid):
+    letras = ''.join(filter(str.isalpha, cellid)).upper()
+    numeros = ''.join(filter(str.isdigit, cellid)).zfill(5)
+    return letras + numeros
+
+# --- SGI ---
 async def obtener_token():
     async with aiohttp.ClientSession(connector=aiohttp.TCPConnector(ssl=ssl_context), headers=HEADERS_BASE) as session:
         try:
@@ -84,9 +94,9 @@ async def consultar_alarmas(token, cell_id):
                         "site_name": e.get("site", {}).get("name"),
                         "device_model": e.get("device", {}).get("description", {}).get("model"),
                         "event_name": e.get("name"),
-                        "alarma": e.get("message"),
+                        "message": e.get("message"),
                         "severity": e.get("severity"),
-                        "fecha_creacion": e.get("ts")
+                        "timestamp": e.get("ts")
                     }
                     if all(resultado.values()):
                         resultados.append(resultado)
@@ -94,7 +104,7 @@ async def consultar_alarmas(token, cell_id):
         except:
             return []
 
-# -------------------- PARTE 2: Giraweb -------------------- #
+# --- Giraweb ---
 prefijos_por_gerencia = {
     "CFBA": ["CF"],
     "PACU": ["ME", "SJ", "SL", "COW", "SC", "CB", "TF", "RN", "NQ"],
@@ -110,14 +120,6 @@ urls_por_gerencia = {
     "LSUR": "http://10.92.62.254/giraweb/index-tab.php?gerencia=LSUR",
     "BLAP": "http://10.92.62.254/giraweb/index-tab.php?gerencia=BLAP"
 }
-
-def limpiar(texto):
-    return texto.strip().replace('\n', ' ').replace('\r', '')
-
-def formatear_cellid(cellid):
-    letras = ''.join(filter(str.isalpha, cellid)).upper()
-    numeros = ''.join(filter(str.isdigit, cellid)).zfill(5)
-    return letras + numeros
 
 def tiempo_en_dias(tiempo_texto):
     if not tiempo_texto:
@@ -176,9 +178,7 @@ def buscar_en_gerencia(nombre, url, session, cell_id_buscado):
     except:
         return []
 
-
-# -------------------- COORDINADOR -------------------- #
-
+# --- COORDINADOR ---
 async def main():
     if len(sys.argv) < 2:
         print(json.dumps([], ensure_ascii=False))
@@ -188,18 +188,17 @@ async def main():
     cell_id_sgi = ''.join(filter(str.isalpha, input_cellid))[:2].upper() + ''.join(filter(str.isdigit, input_cellid)).zfill(5)
     cell_id_giraweb = formatear_cellid(input_cellid)
 
-    # --- Primero buscar en SGI
+    # 1. Intentar en SGI
     token = await obtener_token()
     sgi_result = await consultar_alarmas(token, cell_id_sgi) if token else []
 
     if sgi_result:
-        with open("registros_cellid.json", "w", encoding="utf-8") as f:
+        with open("sgi_alarmas.json", "w", encoding="utf-8") as f:
             json.dump(sgi_result, f, indent=4, ensure_ascii=False)
-
-        print(json.dumps(sgi_result, ensure_ascii=False))
+        print(json.dumps(sgi_result, ensure_ascii=False, indent=4))
         return
 
-    # --- Si SGI no devuelve nada, buscar en Giraweb
+    # 2. Si no hay resultado, intentar en Giraweb
     solo_letras = ''.join(filter(str.isalpha, input_cellid)).upper()
     gerencia_objetivo = None
     for gerencia, prefijos in prefijos_por_gerencia.items():
@@ -222,6 +221,7 @@ async def main():
     else:
         print(json.dumps({"error": "No se encontró información válida para ese Cell-ID"}, ensure_ascii=False))
 
-# --- Ejecutar ---
+# --- RUN ---
 if __name__ == "__main__":
-    asyncio.run(main())
+    loop = asyncio.get_event_loop()
+    loop.run_until_complete(main())
