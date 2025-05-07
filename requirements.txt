@@ -1,12 +1,4 @@
-<<<<<<< HEAD
 flask
 requests
 beautifulsoup4
 tabulate
-=======
-requests
-beautifulsoup4
-tabulate
-aiohttp
-lxml
->>>>>>> 683f5b48b381ed0a556d8a0115a00b80f3bb54f8

@@ -1,3 +1,7 @@
+# --- IMPORTS ---
+import warnings
+warnings.filterwarnings("ignore")
+
 from concurrent.futures import ThreadPoolExecutor, as_completed
 import requests
 from bs4 import BeautifulSoup
@@ -137,5 +141,5 @@ if resultados:
     # print(f"\n⏱ Tiempo total: {time.time() - inicio_total:.2f} segundos")
     print(json.dumps(resultados, ensure_ascii=False))
 else:
-    print("⚠️ No se encontró información válida para ese Cell-ID.\n")
+    # print("⚠️ No se encontró información válida para ese Cell-ID.\n")
     print(json.dumps({"error": "No se encontró información válida para ese Cell-ID"}, ensure_ascii=False))
