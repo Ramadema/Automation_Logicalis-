@@ -176,6 +176,7 @@ def buscar_en_gerencia(nombre, url, session, cell_id_buscado):
     except:
         return []
 
+
 # -------------------- COORDINADOR -------------------- #
 
 async def main():
