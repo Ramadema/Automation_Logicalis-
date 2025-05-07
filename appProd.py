@@ -1,5 +1,3 @@
-#Versión optimizada que busca directamente en la gerencia correspondiente, filtrando solo alarmas reales y registros cuyo tiempo sea menor a 3 días. Usa requests con ThreadPoolExecutor para acelerar la consulta y BeautifulSoup con lxml para un parsing HTML más rápido y eficiente.
-
 from concurrent.futures import ThreadPoolExecutor, as_completed
 import requests
 from bs4 import BeautifulSoup
@@ -26,22 +24,19 @@ urls_por_gerencia = {
     "BLAP": "http://10.92.62.254/giraweb/index-tab.php?gerencia=BLAP"
 }
 
-# Funciones auxiliares
+def limpiar(texto):
+    return texto.strip().replace('\n', ' ').replace('\r', '')
+
 def formatear_cellid(cellid):
     letras = ''.join(filter(str.isalpha, cellid)).upper()
     numeros = ''.join(filter(str.isdigit, cellid)).zfill(5)
     return letras + numeros
 
-def limpiar(texto):
-    return texto.strip().replace('\n', ' ').replace('\r', '')
-
 def tiempo_en_dias(tiempo_texto):
     if not tiempo_texto:
         return 9999
-
     dias = horas = minutos = 0
     partes = tiempo_texto.split()
-
     for i, parte in enumerate(partes):
         if parte == 'd':
             dias = int(partes[i-1])
@@ -49,96 +44,71 @@ def tiempo_en_dias(tiempo_texto):
             horas = int(partes[i-1])
         elif parte == 'm':
             minutos = int(partes[i-1])
+    return dias + horas / 24 + minutos / 1440
 
-    total_dias = dias + horas/24 + minutos/1440
-    return total_dias
-
-# Nueva función para validar solo filas de ALARMAS
 def es_fila_alarma_valida(columnas):
     if len(columnas) != 6:
         return False
-
     site_id = limpiar(columnas[0].get_text(strip=True)).upper()
     ultima_columna = limpiar(columnas[-1].get_text(strip=True)).lower()
-
     if not (site_id.isalnum() and any(c.isalpha() for c in site_id) and any(c.isdigit() for c in site_id)):
         return False
-
     if ultima_columna.startswith(("+54", "sin salida", "sms", "whatsapp")):
         return False
-
     return True
 
-# Comienza el flujo principal
+# MAIN
 if len(sys.argv) < 2:
-    print("❌ Debes pasar el Cell-ID como argumento.")
+    print(json.dumps([], ensure_ascii=False))
     sys.exit(1)
 
 cell_id_input = sys.argv[1].strip()
 cell_id_buscado = formatear_cellid(cell_id_input)
 
-# Detectar la gerencia correspondiente
+# Detectar gerencia
 solo_letras = ''.join(filter(str.isalpha, cell_id_input)).upper()
-prefijo_detectado = None
 gerencia_objetivo = None
-
 for gerencia, prefijos in prefijos_por_gerencia.items():
-    for prefijo in prefijos:
-        if solo_letras.startswith(prefijo):
-            prefijo_detectado = prefijo
-            gerencia_objetivo = gerencia
-            break
-    if gerencia_objetivo:
+    if any(solo_letras.startswith(p) for p in prefijos):
+        gerencia_objetivo = gerencia
         break
 
 if not gerencia_objetivo:
-    print(f"⚠️ No se encontró ninguna gerencia que maneje el prefijo de '{cell_id_input}'")
+    print(json.dumps([], ensure_ascii=False))
     sys.exit(0)
 
-print(f"... Buscando Cell-ID '{cell_id_buscado}' en gerencia: {gerencia_objetivo}")
-
-# Orden de columnas a mostrar
-column_order = ["site_id", "fecha_creacion", "alarma", "TIEMPO", "cell_owner", "site_name"]
-
-# Función para buscar alarmas
 def buscar_en_gerencia(nombre, url, session):
     try:
-        t0 = time.time()
         resp = session.get(url, timeout=8)
-        duracion = time.time() - t0
-        print(f"🕒 {nombre} respondió en {duracion:.2f} segundos")
-
         if resp.status_code != 200:
             return []
-
         soup = BeautifulSoup(resp.text, "lxml")
         filas = soup.find_all("tr")
         encontrados = []
-
         for fila in filas:
             columnas = fila.find_all("td")
             if columnas and es_fila_alarma_valida(columnas):
-                cell_id_actual = limpiar(columnas[0].get_text(strip=True)).upper()
-                if cell_id_actual == cell_id_buscado:
-                    tiempo_texto = limpiar(columnas[-2].get_text(strip=True))
-                    if tiempo_en_dias(tiempo_texto) < 3:
-                        texto_alarma = limpiar(columnas[-1].get_text(strip=True))
-                        encontrados.append({
-                            "site_id": cell_id_actual,
-                            "fecha_creacion": limpiar(columnas[-3].get_text(strip=True)),
-                            "alarma": texto_alarma[:120] + "...",
-                            "TIEMPO": tiempo_texto,
-                            "cell_owner": limpiar(columnas[2].get_text(strip=True)),
-                            "site_name": limpiar(columnas[1].get_text(strip=True))
-                        })
-
+                try:
+                    cell_id_actual = limpiar(columnas[0].get_text(strip=True)).upper()
+                    if cell_id_actual == cell_id_buscado:
+                        tiempo_texto = limpiar(columnas[-2].get_text(strip=True))
+                        if tiempo_en_dias(tiempo_texto) < 3:
+                            resultado = {
+                                "site_id": cell_id_actual,
+                                "fecha_creacion": limpiar(columnas[-3].get_text(strip=True)),
+                                "alarma": limpiar(columnas[-1].get_text(strip=True))[:120] + "...",
+                                "TIEMPO": tiempo_texto,
+                                "cell_owner": limpiar(columnas[2].get_text(strip=True)),
+                                "site_name": limpiar(columnas[1].get_text(strip=True))
+                            }
+                            if all(resultado.values()):
+                                encontrados.append(resultado)
+                except:
+                    continue
         return encontrados
-
-    except Exception as e:
-        print(f"⚠️ Error en {nombre}: {e}")
+    except:
         return []
 
-# Ejecutar búsqueda en la gerencia correspondiente
 inicio_total = time.time()
 session = requests.Session()
 resultados = []
@@ -147,21 +117,24 @@ with ThreadPoolExecutor(max_workers=2) as executor:
     url = urls_por_gerencia[gerencia_objetivo]
     futuros = {executor.submit(buscar_en_gerencia, gerencia_objetivo, url, session): gerencia_objetivo}
     for futuro in as_completed(futuros):
-        resultado = futuro.result()
-        if resultado:
-            resultados = resultado
-            break
+        resultados = futuro.result()
+        break
 
-# Mostrar y guardar resultados
+# # Solo imprime JSON limpio
+# print(json.dumps(resultados, ensure_ascii=False))
+
+# Orden de columnas a mostrar
+column_order = ["site_id", "fecha_creacion", "alarma", "TIEMPO", "cell_owner", "site_name"]
+
+
 if resultados:
-    tabla_ordenada = [[r[col] for col in column_order] for r in resultados]
-    print(tabulate(tabla_ordenada, headers=column_order, tablefmt="grid"))
+    # tabla_ordenada = [[r[col] for col in column_order] for r in resultados]
+    # print(tabulate(tabla_ordenada, headers=column_order, tablefmt="grid"))
 
-    with open("registros_cellid.json", "w", encoding="utf-8") as f:
-        json.dump(resultados, f, indent=4, ensure_ascii=False)
+    # with open("registros_cellid.json", "w", encoding="utf-8") as f:
+    #     json.dump(resultados, f, indent=4, ensure_ascii=False)
 
-    print(f"\n⏱ Tiempo total: {time.time() - inicio_total:.2f} segundos")
-    print("✅ Archivo actualizado.\n")
+    # print(f"\n⏱ Tiempo total: {time.time() - inicio_total:.2f} segundos")
     print(json.dumps(resultados, ensure_ascii=False))
 else:
     print("⚠️ No se encontró información válida para ese Cell-ID.\n")
