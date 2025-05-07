@@ -5,12 +5,17 @@ import sys
 import time
 import ssl
 
+def formatear_cellid(cellid):
+    letras = ''.join(filter(str.isalpha, cellid))[:2].upper()
+    numeros = ''.join(filter(str.isdigit, cellid)).zfill(5)
+    return letras + numeros
+
 # Verificar argumento
 if len(sys.argv) < 2:
     print(json.dumps([], ensure_ascii=False))
     sys.exit(1)
 
-cell_id = sys.argv[1].strip().upper()
+cell_id = formatear_cellid(sys.argv[1].strip())
 
 LOGIN_URL = "https://sgi.claro.amx/auth/local"
 GRAPHQL_URL = "https://sgi.claro.amx/api/graphql"

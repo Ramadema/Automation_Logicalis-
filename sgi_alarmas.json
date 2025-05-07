@@ -2,33 +2,41 @@
     {
         "site_name": "N/A",
         "device_model": "RMM1400",
-        "event_name": "BATERIA_SOBRE_TEMPERATURA_POWER_PB_BB5",
-        "message": "BATERIA_SOBRE_TEMPERATURA_POWER_PB_BB5 - BATERIA SOBRE TEMPERATURA POWER PB BB5 - ",
-        "severity": "critical",
-        "timestamp": "2025-05-06T18:02:56Z"
-    },
-    {
-        "site_name": "N/A",
-        "device_model": "RMM1400",
-        "event_name": "BATERIA_SOBRETEMPERATURA_POWER_PB_BB5",
-        "message": "BATERIA_SOBRETEMPERATURA_POWER_PB_BB5 - BATERIA SOBRETEMPERATURA POWER PB BB5 - ",
-        "severity": "critical",
-        "timestamp": "2025-05-06T18:02:08.402Z"
-    },
-    {
-        "site_name": "N/A",
-        "device_model": "RMM1400",
-        "event_name": "BATERIA_EN_FALLA_POWER_PB_BB5",
-        "message": "BATERIA_EN_FALLA_POWER_PB_BB5 - BATERIA EN FALLA POWER PB BB5 - ",
-        "severity": "normal",
-        "timestamp": "2025-05-06T18:00:23.878Z"
-    },
-    {
-        "site_name": "N/A",
-        "device_model": "RMM1400",
-        "event_name": "Inversor_Menor_CET_D_PB",
-        "message": "Inversor_Menor_CET_D_PB - Inversor Menor CET_D_PB - ",
+        "event_name": "Temperatura_GE1",
+        "message": "Temperatura_GE1 - Temperatura baja: 24.75 C - ",
         "severity": "low",
-        "timestamp": "2025-04-26T17:46:24.018Z"
+        "timestamp": "2025-05-06T16:06:43.292Z"
+    },
+    {
+        "site_name": "N/A",
+        "device_model": "MRS16",
+        "event_name": "tAlarmText2",
+        "message": "tAlarmText2 - *Wrn Stop Fail",
+        "severity": "critical",
+        "timestamp": "2025-05-05T15:45:39.146Z"
+    },
+    {
+        "site_name": "N/A",
+        "device_model": "MRS16",
+        "event_name": "tAlarmText1",
+        "message": "tAlarmText1 - *Wrn Stop Fail",
+        "severity": "critical",
+        "timestamp": "2025-04-28T12:11:41.641Z"
+    },
+    {
+        "site_name": "N/A",
+        "device_model": "MRS16",
+        "event_name": "tAlarmText2",
+        "message": "tAlarmText2 - *Wrn Stop Fail",
+        "severity": "critical",
+        "timestamp": "2025-04-21T15:08:16.82Z"
+    },
+    {
+        "site_name": "N/A",
+        "device_model": "IntelliATS",
+        "event_name": "tAlarmText1",
+        "message": "tAlarmText1 - *Trp Start Fail",
+        "severity": "critical",
+        "timestamp": "2025-04-21T12:01:20.863Z"
     }
 ]
