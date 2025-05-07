@@ -100,9 +100,9 @@ async def consultar_alarmas(token, cell_id):
                         "site_name": e.get("site", {}).get("name"),
                         "device_model": e.get("device", {}).get("description", {}).get("model"),
                         "event_name": e.get("name"),
-                        "message": e.get("message"),
+                        "alarma": e.get("message"),
                         "severity": e.get("severity"),
-                        "timestamp": e.get("ts")
+                        "fecha_creacion": e.get("ts")
                     }
                     if all(resultado.values()):
                         resultados.append(resultado)
@@ -123,9 +123,10 @@ async def main():
     resultado = await consultar_alarmas(token, cell_id)
 
     if resultado:
-        print(json.dumps(resultado, ensure_ascii=False, indent=4))
-        with open("sgi_alarmas.json", "w", encoding="utf-8") as f:
+        with open("registros_cellid.json", "w", encoding="utf-8") as f:
             json.dump(resultado, f, indent=4, ensure_ascii=False)
+
+        print(json.dumps(resultado, ensure_ascii=False))
     else:
         print("⚠️ No se encontraron alarmas o hubo un error.")
         print(json.dumps([], ensure_ascii=False))
