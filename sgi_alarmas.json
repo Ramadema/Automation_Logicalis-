@@ -1,42 +1,18 @@
 [
     {
         "site_name": "N/A",
-        "device_model": "RMM1400",
-        "event_name": "Temperatura_GE1",
-        "message": "Temperatura_GE1 - Temperatura baja: 24.75 C - ",
-        "severity": "low",
-        "timestamp": "2025-05-06T16:06:43.292Z"
+        "device_model": "SC200",
+        "event_name": "EQUIPOSINGESTION",
+        "alarma": "EQUIPOSINGESTION - Eaton SC200",
+        "severity": "critical",
+        "fecha_creacion": "2025-05-07T14:59:28.113Z"
     },
     {
         "site_name": "N/A",
-        "device_model": "MRS16",
-        "event_name": "tAlarmText2",
-        "message": "tAlarmText2 - *Wrn Stop Fail",
+        "device_model": "M820B/ACU+",
+        "event_name": "EQUIPOSINGESTION",
+        "alarma": "EQUIPOSINGESTION - Emerson Netsure ACU+",
         "severity": "critical",
-        "timestamp": "2025-05-05T15:45:39.146Z"
-    },
-    {
-        "site_name": "N/A",
-        "device_model": "MRS16",
-        "event_name": "tAlarmText1",
-        "message": "tAlarmText1 - *Wrn Stop Fail",
-        "severity": "critical",
-        "timestamp": "2025-04-28T12:11:41.641Z"
-    },
-    {
-        "site_name": "N/A",
-        "device_model": "MRS16",
-        "event_name": "tAlarmText2",
-        "message": "tAlarmText2 - *Wrn Stop Fail",
-        "severity": "critical",
-        "timestamp": "2025-04-21T15:08:16.82Z"
-    },
-    {
-        "site_name": "N/A",
-        "device_model": "IntelliATS",
-        "event_name": "tAlarmText1",
-        "message": "tAlarmText1 - *Trp Start Fail",
-        "severity": "critical",
-        "timestamp": "2025-04-21T12:01:20.863Z"
+        "fecha_creacion": "2025-05-07T14:57:35.248Z"
     }
 ]
