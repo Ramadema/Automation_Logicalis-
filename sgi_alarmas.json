@@ -1,0 +1,34 @@
+[
+    {
+        "site_name": "N/A",
+        "device_model": "RMM1400",
+        "event_name": "BATERIA_SOBRE_TEMPERATURA_POWER_PB_BB5",
+        "message": "BATERIA_SOBRE_TEMPERATURA_POWER_PB_BB5 - BATERIA SOBRE TEMPERATURA POWER PB BB5 - ",
+        "severity": "critical",
+        "timestamp": "2025-05-06T18:02:56Z"
+    },
+    {
+        "site_name": "N/A",
+        "device_model": "RMM1400",
+        "event_name": "BATERIA_SOBRETEMPERATURA_POWER_PB_BB5",
+        "message": "BATERIA_SOBRETEMPERATURA_POWER_PB_BB5 - BATERIA SOBRETEMPERATURA POWER PB BB5 - ",
+        "severity": "critical",
+        "timestamp": "2025-05-06T18:02:08.402Z"
+    },
+    {
+        "site_name": "N/A",
+        "device_model": "RMM1400",
+        "event_name": "BATERIA_EN_FALLA_POWER_PB_BB5",
+        "message": "BATERIA_EN_FALLA_POWER_PB_BB5 - BATERIA EN FALLA POWER PB BB5 - ",
+        "severity": "normal",
+        "timestamp": "2025-05-06T18:00:23.878Z"
+    },
+    {
+        "site_name": "N/A",
+        "device_model": "RMM1400",
+        "event_name": "Inversor_Menor_CET_D_PB",
+        "message": "Inversor_Menor_CET_D_PB - Inversor Menor CET_D_PB - ",
+        "severity": "low",
+        "timestamp": "2025-04-26T17:46:24.018Z"
+    }
+]
