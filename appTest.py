@@ -135,8 +135,8 @@ if resultados:
     # tabla_ordenada = [[r[col] for col in column_order] for r in resultados]
     # print(tabulate(tabla_ordenada, headers=column_order, tablefmt="grid"))
 
-    # with open("registros_cellid.json", "w", encoding="utf-8") as f:
-    #     json.dump(resultados, f, indent=4, ensure_ascii=False)
+    with open("registros_cellid.json", "w", encoding="utf-8") as f:
+        json.dump(resultados, f, indent=4, ensure_ascii=False)
 
     # print(f"\n⏱ Tiempo total: {time.time() - inicio_total:.2f} segundos")
     print(json.dumps(resultados, ensure_ascii=False))
