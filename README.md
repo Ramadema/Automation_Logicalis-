@@ -30,7 +30,7 @@ Este proyecto requiere algunas librerías externas de Python (`requests`, `beaut
 Una vez instalado `pip`, ejecutá el siguiente comando para instalar las dependencias del proyecto:
 
 ```bash
-python -m pip install --user requests beautifulsoup4 tabulate
+python -m pip install --user -r requirements.txt
 ```
 
 Estas librerías permiten:

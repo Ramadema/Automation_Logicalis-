@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 {
     "CF00616": {
         "CFBA": [
@@ -10,5 +11,31 @@
                 "SITIO": "Francisco Alvarez 2"
             }
         ]
+=======
+[
+    {
+        "site_id": "CF00118",
+        "fecha_creacion": "06/05/2025_23:35:00",
+        "alarma": "FUNCIONAMIENTO DEL GENERADOR...",
+        "TIEMPO": "000 d 00 h 38 m",
+        "cell_owner": "Juan Manuel Barragan",
+        "site_name": "Aeropuerto Ezeiza"
+    },
+    {
+        "site_id": "CF00118",
+        "fecha_creacion": "06/05/2025_23:37:00",
+        "alarma": "TRANSFER SWITCH...",
+        "TIEMPO": "000 d 00 h 36 m",
+        "cell_owner": "Juan Manuel Barragan",
+        "site_name": "Aeropuerto Ezeiza"
+    },
+    {
+        "site_id": "CF00118",
+        "fecha_creacion": "06/05/2025_23:35:00",
+        "alarma": "CORTE DE ENERGIA COMERCIAL...",
+        "TIEMPO": "000 d 00 h 38 m",
+        "cell_owner": "Juan Manuel Barragan",
+        "site_name": "Aeropuerto Ezeiza"
+>>>>>>> 683f5b48b381ed0a556d8a0115a00b80f3bb54f8
     }
-}
+]
