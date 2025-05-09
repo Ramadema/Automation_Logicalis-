@@ -59,5 +59,3 @@ C:\Users\TU_USUARIO\.local\bin
 ```
 
 ---
-
-> Si tenés cualquier duda sobre la instalación, podés abrir un issue o consultarme a mi sin drama 
