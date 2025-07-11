@@ -4,7 +4,6 @@ warnings.filterwarnings("ignore")
 
 import requests
 from bs4 import BeautifulSoup
-from tabulate import tabulate
 import json
 import time
 import sys
@@ -26,7 +25,11 @@ HEADERS_BASE = {
 
 LOGIN_CREDENCIALES = {
     "username": "EXA53410",
+<<<<<<< HEAD
     "password": "Agosto.12"
+=======
+    "password": "Agosto.23"
+>>>>>>> 7b447337ddc3ffbfb6d5b9a3dbaad06e7ba4e1fa
 }
 
 ssl_context = ssl.create_default_context()
@@ -176,8 +179,65 @@ def buscar_en_gerencia(nombre, url, session, cell_id_buscado):
     except:
         return []
 
+<<<<<<< HEAD
 # -------------------- COORDINADOR -------------------- #
 
+=======
+def buscar_datos_oos(session, url, cell_id_buscado):
+    try:
+        resp = session.get(url, timeout=8)
+        if resp.status_code != 200:
+            return []
+
+        soup = BeautifulSoup(resp.text, "lxml")
+        tabla = soup.find("table", class_="tabla2")
+        if not tabla:
+            return []
+
+        filas = tabla.find_all("tr")
+        resultados = []
+        cell_id_actual = None
+        dentro_de_oos = False
+
+        for fila in filas:
+            columnas = fila.find_all("td")
+
+            if not columnas or all(col.get_text(strip=True) == '' for col in columnas):
+                continue
+
+            if len(columnas) >= 13:
+                cell_id_actual = limpiar(columnas[0].get_text(strip=True)).upper()
+                if cell_id_actual != cell_id_buscado:
+                    dentro_de_oos = False
+                    continue
+
+                dentro_de_oos = True
+                tec = limpiar(columnas[10].get_text(strip=True))
+                fecha = limpiar(columnas[12].get_text(strip=True))
+                if tec and fecha:
+                    resultados.append({
+                        "TEC": tec,
+                        "fecha_creacion_tec": fecha
+                    })
+
+            elif dentro_de_oos and len(columnas) == 3:
+                tec = limpiar(columnas[0].get_text(strip=True))
+                fecha = limpiar(columnas[2].get_text(strip=True))
+                if tec and fecha:
+                    resultados.append({
+                        "TEC": tec,
+                        "fecha_creacion_tec": fecha
+                    })
+
+        return resultados
+
+    except Exception as e:
+        print(f"\u26a0\ufe0f Error en buscar_datos_oos: {e}")
+        return []
+
+# -------------------- COORDINADOR -------------------- #
+
+>>>>>>> 7b447337ddc3ffbfb6d5b9a3dbaad06e7ba4e1fa
 async def main():
     if len(sys.argv) < 2:
         print(json.dumps([], ensure_ascii=False))
@@ -187,18 +247,27 @@ async def main():
     cell_id_sgi = ''.join(filter(str.isalpha, input_cellid))[:2].upper() + ''.join(filter(str.isdigit, input_cellid)).zfill(5)
     cell_id_giraweb = formatear_cellid(input_cellid)
 
+<<<<<<< HEAD
     # --- Primero buscar en SGI
+=======
+>>>>>>> 7b447337ddc3ffbfb6d5b9a3dbaad06e7ba4e1fa
     token = await obtener_token()
     sgi_result = await consultar_alarmas(token, cell_id_sgi) if token else []
 
     if sgi_result:
         with open("registros_cellid.json", "w", encoding="utf-8") as f:
             json.dump(sgi_result, f, indent=4, ensure_ascii=False)
+<<<<<<< HEAD
 
         print(json.dumps(sgi_result, ensure_ascii=False))
         return
 
     # --- Si SGI no devuelve nada, buscar en Giraweb
+=======
+        print(json.dumps(sgi_result, ensure_ascii=False))
+        return
+
+>>>>>>> 7b447337ddc3ffbfb6d5b9a3dbaad06e7ba4e1fa
     solo_letras = ''.join(filter(str.isalpha, input_cellid)).upper()
     gerencia_objetivo = None
     for gerencia, prefijos in prefijos_por_gerencia.items():
@@ -207,12 +276,17 @@ async def main():
             break
 
     if not gerencia_objetivo:
+<<<<<<< HEAD
         print(json.dumps({"error": "No se encontró información válida para ese Cell-ID"}, ensure_ascii=False))
+=======
+        print(json.dumps({"error": "No se encontr\u00f3 informaci\u00f3n v\u00e1lida para ese Cell-ID"}, ensure_ascii=False))
+>>>>>>> 7b447337ddc3ffbfb6d5b9a3dbaad06e7ba4e1fa
         return
 
     session = requests.Session()
     url = urls_por_gerencia[gerencia_objetivo]
     resultados = buscar_en_gerencia(gerencia_objetivo, url, session, cell_id_giraweb)
+<<<<<<< HEAD
 
     if resultados:
         with open("registros_cellid.json", "w", encoding="utf-8") as f:
@@ -225,3 +299,23 @@ async def main():
 if __name__ == "__main__":
     loop = asyncio.get_event_loop()
     loop.run_until_complete(main())
+=======
+    datos_oos = buscar_datos_oos(session, url, cell_id_giraweb)
+
+    salida = resultados if resultados else []
+
+    if datos_oos:
+        salida.append({"sitios_oos": datos_oos})
+
+    if salida:
+        with open("registros_cellid.json", "w", encoding="utf-8") as f:
+            json.dump(salida, f, indent=4, ensure_ascii=False)
+        print(json.dumps(salida, ensure_ascii=False))
+    else:
+        print(json.dumps({"error": "No se encontr\u00f3 informaci\u00f3n v\u00e1lida para ese Cell-ID"}, ensure_ascii=False))
+
+# --- RUN ---
+if __name__ == "__main__":
+    loop = asyncio.get_event_loop()
+    loop.run_until_complete(main())
+>>>>>>> 7b447337ddc3ffbfb6d5b9a3dbaad06e7ba4e1fa

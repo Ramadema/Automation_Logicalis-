@@ -1,10 +1,19 @@
 [
     {
+<<<<<<< HEAD
         "site_id": "ME00021",
         "fecha_creacion": "06/05/2025_12:48:00",
         "alarma": "FALLA DEL GENERADOR...",
         "TIEMPO": "001 d 01 h 36 m",
         "cell_owner": "Guillermo Bertolani",
         "site_name": "La Dormida"
+=======
+        "sitios_oos": [
+            {
+                "TEC": "UL",
+                "fecha_creacion_tec": "30/06/2025_07:54:00"
+            }
+        ]
+>>>>>>> 7b447337ddc3ffbfb6d5b9a3dbaad06e7ba4e1fa
     }
 ]
