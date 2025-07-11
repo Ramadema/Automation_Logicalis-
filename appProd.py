@@ -2,15 +2,98 @@
 import warnings
 warnings.filterwarnings("ignore")
 
-from concurrent.futures import ThreadPoolExecutor, as_completed
 import requests
 from bs4 import BeautifulSoup
-from tabulate import tabulate
 import json
 import time
 import sys
+import asyncio
+import aiohttp
+import ssl
+from concurrent.futures import ThreadPoolExecutor, as_completed
 
-# Mapeo manual de prefijos
+# -------------------- PARTE 1: SGI (wilab) -------------------- #
+LOGIN_URL = "https://sgi.claro.amx/auth/local"
+GRAPHQL_URL = "https://sgi.claro.amx/api/graphql"
+
+HEADERS_BASE = {
+    "User-Agent": "Mozilla/5.0",
+    "Content-Type": "application/json",
+    "Origin": "https://sgi.claro.amx",
+    "Accept": "application/json"
+}
+
+LOGIN_CREDENCIALES = {
+    "username": "EXA53410",
+    "password": "Agosto.23"
+}
+
+ssl_context = ssl.create_default_context()
+ssl_context.check_hostname = False
+ssl_context.verify_mode = ssl.CERT_NONE
+
+QUERY = """
+query EVENTS_AND_DEVICES($client_id: String!) {
+  events: events_by_client_id(client_id: $client_id) {
+    site {
+      name
+    }
+    device {
+      description {
+        model
+      }
+    }
+    name
+    ts
+    severity
+    message
+  }
+}
+"""
+
+async def obtener_token():
+    async with aiohttp.ClientSession(connector=aiohttp.TCPConnector(ssl=ssl_context), headers=HEADERS_BASE) as session:
+        try:
+            async with session.post(LOGIN_URL, json=LOGIN_CREDENCIALES) as resp:
+                if resp.status != 200:
+                    return None
+                data = await resp.json()
+                return data.get("token")
+        except:
+            return None
+
+async def consultar_alarmas(token, cell_id):
+    headers = {**HEADERS_BASE, "Authorization": f"Bearer {token}"}
+    payload = {
+        "operationName": "EVENTS_AND_DEVICES",
+        "query": QUERY,
+        "variables": {"client_id": cell_id}
+    }
+
+    async with aiohttp.ClientSession(connector=aiohttp.TCPConnector(ssl=ssl_context), headers=headers) as session:
+        try:
+            async with session.post(GRAPHQL_URL, json=payload) as response:
+                if response.status != 200:
+                    return []
+                data = await response.json()
+                eventos = data.get("data", {}).get("events", [])
+                resultados = []
+                for e in eventos:
+                    resultado = {
+                        "site_name": e.get("site", {}).get("name"),
+                        "device_model": e.get("device", {}).get("description", {}).get("model"),
+                        "event_name": e.get("name"),
+                        "alarma": e.get("message"),
+                        "severity": e.get("severity"),
+                        "fecha_creacion": e.get("ts")
+                    }
+                    if all(resultado.values()):
+                        resultados.append(resultado)
+                return resultados
+        except:
+            return []
+
+# -------------------- PARTE 2: Giraweb -------------------- #
 prefijos_por_gerencia = {
     "CFBA": ["CF"],
     "PACU": ["ME", "SJ", "SL", "COW", "SC", "CB", "TF", "RN", "NQ"],
@@ -19,7 +102,6 @@ prefijos_por_gerencia = {
     "BLAP": ["BA", "PA", "PAR"]
 }
 
-# URLs por gerencia
 urls_por_gerencia = {
     "CFBA": "http://10.92.62.254/giraweb/index-tab.php?gerencia=CFBA",
     "PACU": "http://10.92.62.254/giraweb/index-tab.php?gerencia=PACU",
@@ -61,27 +143,7 @@ def es_fila_alarma_valida(columnas):
         return False
     return True
 
-# MAIN
-if len(sys.argv) < 2:
-    print(json.dumps([], ensure_ascii=False))
-    sys.exit(1)
-
-cell_id_input = sys.argv[1].strip()
-cell_id_buscado = formatear_cellid(cell_id_input)
-
-# Detectar gerencia
-solo_letras = ''.join(filter(str.isalpha, cell_id_input)).upper()
-gerencia_objetivo = None
-for gerencia, prefijos in prefijos_por_gerencia.items():
-    if any(solo_letras.startswith(p) for p in prefijos):
-        gerencia_objetivo = gerencia
-        break
-
-if not gerencia_objetivo:
-    print(json.dumps([], ensure_ascii=False))
-    sys.exit(0)
-
-def buscar_en_gerencia(nombre, url, session):
+def buscar_en_gerencia(nombre, url, session, cell_id_buscado):
     try:
         resp = session.get(url, timeout=8)
         if resp.status_code != 200:
@@ -113,33 +175,107 @@ def buscar_en_gerencia(nombre, url, session):
     except:
         return []
 
-inicio_total = time.time()
-session = requests.Session()
-resultados = []
+def buscar_datos_oos(session, url, cell_id_buscado):
+    try:
+        resp = session.get(url, timeout=8)
+        if resp.status_code != 200:
+            return []
 
-with ThreadPoolExecutor(max_workers=2) as executor:
+        soup = BeautifulSoup(resp.text, "lxml")
+        tabla = soup.find("table", class_="tabla2")
+        if not tabla:
+            return []
+
+        filas = tabla.find_all("tr")
+        resultados = []
+        cell_id_actual = None
+        dentro_de_oos = False
+
+        for fila in filas:
+            columnas = fila.find_all("td")
+
+            if not columnas or all(col.get_text(strip=True) == '' for col in columnas):
+                continue
+
+            if len(columnas) >= 13:
+                cell_id_actual = limpiar(columnas[0].get_text(strip=True)).upper()
+                if cell_id_actual != cell_id_buscado:
+                    dentro_de_oos = False
+                    continue
+
+                dentro_de_oos = True
+                tec = limpiar(columnas[10].get_text(strip=True))
+                fecha = limpiar(columnas[12].get_text(strip=True))
+                if tec and fecha:
+                    resultados.append({
+                        "TEC": tec,
+                        "fecha_creacion_tec": fecha
+                    })
+
+            elif dentro_de_oos and len(columnas) == 3:
+                tec = limpiar(columnas[0].get_text(strip=True))
+                fecha = limpiar(columnas[2].get_text(strip=True))
+                if tec and fecha:
+                    resultados.append({
+                        "TEC": tec,
+                        "fecha_creacion_tec": fecha
+                    })
+
+        return resultados
+
+    except Exception as e:
+        print(f"\u26a0\ufe0f Error en buscar_datos_oos: {e}")
+        return []
+
+# -------------------- COORDINADOR -------------------- #
+
+async def main():
+    if len(sys.argv) < 2:
+        print(json.dumps([], ensure_ascii=False))
+        return
+
+    input_cellid = sys.argv[1].strip()
+    cell_id_sgi = ''.join(filter(str.isalpha, input_cellid))[:2].upper() + ''.join(filter(str.isdigit, input_cellid)).zfill(5)
+    cell_id_giraweb = formatear_cellid(input_cellid)
+
+    token = await obtener_token()
+    sgi_result = await consultar_alarmas(token, cell_id_sgi) if token else []
+
+    if sgi_result:
+        with open("registros_cellid.json", "w", encoding="utf-8") as f:
+            json.dump(sgi_result, f, indent=4, ensure_ascii=False)
+        print(json.dumps(sgi_result, ensure_ascii=False))
+        return
+
+    solo_letras = ''.join(filter(str.isalpha, input_cellid)).upper()
+    gerencia_objetivo = None
+    for gerencia, prefijos in prefijos_por_gerencia.items():
+        if any(solo_letras.startswith(p) for p in prefijos):
+            gerencia_objetivo = gerencia
+            break
+
+    if not gerencia_objetivo:
+        print(json.dumps({"error": "No se encontr\u00f3 informaci\u00f3n v\u00e1lida para ese Cell-ID"}, ensure_ascii=False))
+        return
+
+    session = requests.Session()
     url = urls_por_gerencia[gerencia_objetivo]
-    futuros = {executor.submit(buscar_en_gerencia, gerencia_objetivo, url, session): gerencia_objetivo}
-    for futuro in as_completed(futuros):
-        resultados = futuro.result()
-        break
+    resultados = buscar_en_gerencia(gerencia_objetivo, url, session, cell_id_giraweb)
+    datos_oos = buscar_datos_oos(session, url, cell_id_giraweb)
 
-# # Solo imprime JSON limpio
-# print(json.dumps(resultados, ensure_ascii=False))
+    salida = resultados if resultados else []
 
-# Orden de columnas a mostrar
-column_order = ["site_id", "fecha_creacion", "alarma", "TIEMPO", "cell_owner", "site_name"]
+    if datos_oos:
+        salida.append({"sitios_oos": datos_oos})
 
+    if salida:
+        with open("registros_cellid.json", "w", encoding="utf-8") as f:
+            json.dump(salida, f, indent=4, ensure_ascii=False)
+        print(json.dumps(salida, ensure_ascii=False))
+    else:
+        print(json.dumps({"error": "No se encontr\u00f3 informaci\u00f3n v\u00e1lida para ese Cell-ID"}, ensure_ascii=False))
 
-if resultados:
-    # tabla_ordenada = [[r[col] for col in column_order] for r in resultados]
-    # print(tabulate(tabla_ordenada, headers=column_order, tablefmt="grid"))
-
-    # with open("registros_cellid.json", "w", encoding="utf-8") as f:
-    #     json.dump(resultados, f, indent=4, ensure_ascii=False)
-
-    # print(f"\n⏱ Tiempo total: {time.time() - inicio_total:.2f} segundos")
-    print(json.dumps(resultados, ensure_ascii=False))
-else:
-    # print("⚠️ No se encontró información válida para ese Cell-ID.\n")
-    print(json.dumps({"error": "No se encontró información válida para ese Cell-ID"}, ensure_ascii=False))
+# --- RUN ---
+if __name__ == "__main__":
+    loop = asyncio.get_event_loop()
+    loop.run_until_complete(main())
