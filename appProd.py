@@ -25,11 +25,7 @@ HEADERS_BASE = {
 
 LOGIN_CREDENCIALES = {
     "username": "EXA53410",
-<<<<<<< HEAD
-    "password": "Agosto.12"
-=======
     "password": "Agosto.23"
->>>>>>> 7b447337ddc3ffbfb6d5b9a3dbaad06e7ba4e1fa
 }
 
 ssl_context = ssl.create_default_context()
@@ -179,10 +175,6 @@ def buscar_en_gerencia(nombre, url, session, cell_id_buscado):
     except:
         return []
 
-<<<<<<< HEAD
-# -------------------- COORDINADOR -------------------- #
-
-=======
 def buscar_datos_oos(session, url, cell_id_buscado):
     try:
         resp = session.get(url, timeout=8)
@@ -237,7 +229,6 @@ def buscar_datos_oos(session, url, cell_id_buscado):
 
 # -------------------- COORDINADOR -------------------- #
 
->>>>>>> 7b447337ddc3ffbfb6d5b9a3dbaad06e7ba4e1fa
 async def main():
     if len(sys.argv) < 2:
         print(json.dumps([], ensure_ascii=False))
@@ -247,27 +238,15 @@ async def main():
     cell_id_sgi = ''.join(filter(str.isalpha, input_cellid))[:2].upper() + ''.join(filter(str.isdigit, input_cellid)).zfill(5)
     cell_id_giraweb = formatear_cellid(input_cellid)
 
-<<<<<<< HEAD
-    # --- Primero buscar en SGI
-=======
->>>>>>> 7b447337ddc3ffbfb6d5b9a3dbaad06e7ba4e1fa
     token = await obtener_token()
     sgi_result = await consultar_alarmas(token, cell_id_sgi) if token else []
 
     if sgi_result:
         with open("registros_cellid.json", "w", encoding="utf-8") as f:
             json.dump(sgi_result, f, indent=4, ensure_ascii=False)
-<<<<<<< HEAD
-
         print(json.dumps(sgi_result, ensure_ascii=False))
         return
 
-    # --- Si SGI no devuelve nada, buscar en Giraweb
-=======
-        print(json.dumps(sgi_result, ensure_ascii=False))
-        return
-
->>>>>>> 7b447337ddc3ffbfb6d5b9a3dbaad06e7ba4e1fa
     solo_letras = ''.join(filter(str.isalpha, input_cellid)).upper()
     gerencia_objetivo = None
     for gerencia, prefijos in prefijos_por_gerencia.items():
@@ -276,30 +255,12 @@ async def main():
             break
 
     if not gerencia_objetivo:
-<<<<<<< HEAD
-        print(json.dumps({"error": "No se encontró información válida para ese Cell-ID"}, ensure_ascii=False))
-=======
         print(json.dumps({"error": "No se encontr\u00f3 informaci\u00f3n v\u00e1lida para ese Cell-ID"}, ensure_ascii=False))
->>>>>>> 7b447337ddc3ffbfb6d5b9a3dbaad06e7ba4e1fa
         return
 
     session = requests.Session()
     url = urls_por_gerencia[gerencia_objetivo]
     resultados = buscar_en_gerencia(gerencia_objetivo, url, session, cell_id_giraweb)
-<<<<<<< HEAD
-
-    if resultados:
-        with open("registros_cellid.json", "w", encoding="utf-8") as f:
-            json.dump(resultados, f, indent=4, ensure_ascii=False)
-        print(json.dumps(resultados, ensure_ascii=False))
-    else:
-        print(json.dumps({"error": "No se encontró información válida para ese Cell-ID"}, ensure_ascii=False))
-
-# --- RUN ---
-if __name__ == "__main__":
-    loop = asyncio.get_event_loop()
-    loop.run_until_complete(main())
-=======
     datos_oos = buscar_datos_oos(session, url, cell_id_giraweb)
 
     salida = resultados if resultados else []
@@ -318,4 +279,3 @@ if __name__ == "__main__":
 if __name__ == "__main__":
     loop = asyncio.get_event_loop()
     loop.run_until_complete(main())
->>>>>>> 7b447337ddc3ffbfb6d5b9a3dbaad06e7ba4e1fa
