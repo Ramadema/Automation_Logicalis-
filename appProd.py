@@ -25,7 +25,7 @@ HEADERS_BASE = {
 
 LOGIN_CREDENCIALES = {
     "username": "EXA53410",
-    "password": "Agosto.23"
+    "password": "Agosto.23*"
 }
 
 ssl_context = ssl.create_default_context()
