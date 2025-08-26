@@ -1,10 +1,10 @@
 [
-    {
-        "sitios_oos": [
-            {
-                "TEC": "UL",
-                "fecha_creacion_tec": "30/06/2025_07:54:00"
-            }
-        ]
-    }
+  {
+    "site_id": "RN00116",
+    "fecha_creacion": "25/08/2025_14:47:00",
+    "alarma": "PUERTA ABIERTA",
+    "TIEMPO": "000 d 01 h 27 m",
+    "cell_owner": "Lucas Bonfil",
+    "site_name": "Bariloche Salida Sur Rn258"
+  }
 ]

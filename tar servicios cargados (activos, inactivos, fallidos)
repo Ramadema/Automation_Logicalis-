@@ -1,0 +1,198 @@
+[0;4mUNIT FILE                              STATE          [0m
+accounts-daemon.service                [0;1;32menabled        [0m
+acpid.service                          [0;1;31mdisabled       [0m
+apparmor.service                       [0;1;32menabled        [0m
+apport-autoreport.service              static         
+apport-forward@.service                static         
+apport.service                         generated      
+apt-daily-upgrade.service              static         
+apt-daily.service                      static         
+atd.service                            [0;1;32menabled        [0m
+autovt@.service                        [0;1;32menabled        [0m
+blk-availability.service               [0;1;32menabled        [0m
+bootlogd.service                       [0;1;31mmasked         [0m
+bootlogs.service                       [0;1;31mmasked         [0m
+bootmisc.service                       [0;1;31mmasked         [0m
+checkfs.service                        [0;1;31mmasked         [0m
+checkroot-bootclean.service            [0;1;31mmasked         [0m
+checkroot.service                      [0;1;31mmasked         [0m
+console-getty.service                  [0;1;31mdisabled       [0m
+console-setup.service                  [0;1;32menabled        [0m
+container-getty@.service               static         
+cron.service                           [0;1;32menabled        [0m
+cryptdisks-early.service               [0;1;31mmasked         [0m
+cryptdisks.service                     [0;1;31mmasked         [0m
+dbus-org.freedesktop.hostname1.service static         
+dbus-org.freedesktop.locale1.service   static         
+dbus-org.freedesktop.login1.service    static         
+dbus-org.freedesktop.resolve1.service  [0;1;32menabled        [0m
+dbus-org.freedesktop.timedate1.service static         
+dbus.service                           static         
+debug-shell.service                    [0;1;31mdisabled       [0m
+dm-event.service                       static         
+ebtables.service                       [0;1;32menabled        [0m
+emergency.service                      static         
+friendly-recovery.service              static         
+fstrim.service                         static         
+fuse.service                           [0;1;31mmasked         [0m
+getty-static.service                   static         
+getty@.service                         [0;1;32menabled        [0m
+grub-common.service                    generated      
+halt.service                           [0;1;31mmasked         [0m
+hostname.service                       [0;1;31mmasked         [0m
+hwclock.service                        [0;1;31mmasked         [0m
+initrd-cleanup.service                 static         
+initrd-parse-etc.service               static         
+initrd-switch-root.service             static         
+initrd-udevadm-cleanup-db.service      static         
+irqbalance.service                     [0;1;32menabled        [0m
+iscsi.service                          [0;1;32menabled        [0m
+iscsid.service                         [0;1;31mdisabled       [0m
+keyboard-setup.service                 [0;1;32menabled        [0m
+killprocs.service                      [0;1;31mmasked         [0m
+kmod-static-nodes.service              static         
+kmod.service                           static         
+logicmonitor-agent.service             [0;1;32menabled        [0m
+logicmonitor-watchdog.service          [0;1;32menabled        [0m
+lvm2-lvmetad.service                   static         
+lvm2-lvmpolld.service                  static         
+lvm2-monitor.service                   [0;1;32menabled        [0m
+lvm2-pvscan@.service                   static         
+lvm2.service                           [0;1;31mmasked         [0m
+lxcfs.service                          [0;1;32menabled        [0m
+lxd-containers.service                 [0;1;32menabled        [0m
+lxd.service                            indirect       
+mdadm-grow-continue@.service           static         
+mdadm-last-resort@.service             static         
+mdadm-shutdown.service                 [0;1;31mdisabled       [0m
+mdadm-waitidle.service                 [0;1;31mmasked         [0m
+mdadm.service                          [0;1;31mmasked         [0m
+mdmon@.service                         static         
+mdmonitor.service                      static         
+module-init-tools.service              static         
+motd-news.service                      static         
+motd.service                           [0;1;31mmasked         [0m
+mountall-bootclean.service             [0;1;31mmasked         [0m
+mountall.service                       [0;1;31mmasked         [0m
+mountdevsubfs.service                  [0;1;31mmasked         [0m
+mountkernfs.service                    [0;1;31mmasked         [0m
+mountnfs-bootclean.service             [0;1;31mmasked         [0m
+mountnfs.service                       [0;1;31mmasked         [0m
+mysql.service                          [0;1;32menabled        [0m
+networkd-dispatcher.service            [0;1;32menabled        [0m
+ondemand.service                       [0;1;32menabled        [0m
+open-iscsi.service                     [0;1;32menabled        [0m
+open-vm-tools.service                  [0;1;32menabled        [0m
+plymouth-halt.service                  static         
+plymouth-kexec.service                 static         
+plymouth-log.service                   static         
+plymouth-poweroff.service              static         
+plymouth-quit-wait.service             static         
+plymouth-quit.service                  static         
+plymouth-read-write.service            static         
+plymouth-reboot.service                static         
+plymouth-start.service                 static         
+plymouth-switch-root.service           static         
+plymouth.service                       static         
+polkit.service                         static         
+pollinate.service                      [0;1;32menabled        [0m
+postgresql.service                     [0;1;32menabled        [0m
+postgresql@.service                    indirect       
+procps.service                         static         
+quotaon.service                        static         
+rc-local.service                       static         
+rc.local.service                       static         
+rc.service                             [0;1;31mmasked         [0m
+rcS.service                            [0;1;31mmasked         [0m
+reboot.service                         [0;1;31mmasked         [0m
+rescue.service                         static         
+rmnologin.service                      [0;1;31mmasked         [0m
+rsync.service                          [0;1;32menabled        [0m
+rsyslog.service                        [0;1;32menabled        [0m
+screen-cleanup.service                 [0;1;31mmasked         [0m
+sendsigs.service                       [0;1;31mmasked         [0m
+serial-getty@.service                  [0;1;31mdisabled       [0m
+setvtrgb.service                       [0;1;32menabled        [0m
+single.service                         [0;1;31mmasked         [0m
+snapd.autoimport.service               [0;1;32menabled        [0m
+snapd.core-fixup.service               [0;1;32menabled        [0m
+snapd.failure.service                  static         
+snapd.seeded.service                   [0;1;32menabled        [0m
+snapd.service                          [0;1;32menabled        [0m
+snapd.snap-repair.service              static         
+snapd.system-shutdown.service          [0;1;32menabled        [0m
+snmpd.service                          [0;1;32menabled        [0m
+ssh.service                            [0;1;32menabled        [0m
+ssh@.service                           static         
+sshd.service                           [0;1;32menabled        [0m
+stop-bootlogd-single.service           [0;1;31mmasked         [0m
+stop-bootlogd.service                  [0;1;31mmasked         [0m
+sudo.service                           [0;1;31mmasked         [0m
+syslog.service                         [0;1;32menabled        [0m
+sysstat.service                        [0;1;32menabled        [0m
+system-update-cleanup.service          static         
+systemd-ask-password-console.service   static         
+systemd-ask-password-plymouth.service  static         
+systemd-ask-password-wall.service      static         
+systemd-backlight@.service             static         
+systemd-binfmt.service                 static         
+systemd-exit.service                   static         
+systemd-fsck-root.service              enabled-runtime
+systemd-fsck@.service                  static         
+systemd-fsckd.service                  static         
+systemd-halt.service                   static         
+systemd-hibernate-resume@.service      static         
+systemd-hibernate.service              static         
+systemd-hostnamed.service              static         
+systemd-hwdb-update.service            static         
+systemd-hybrid-sleep.service           static         
+systemd-initctl.service                static         
+systemd-journal-flush.service          static         
+systemd-journald.service               static         
+systemd-kexec.service                  static         
+systemd-localed.service                static         
+systemd-logind.service                 static         
+systemd-machine-id-commit.service      static         
+systemd-modules-load.service           static         
+systemd-networkd-wait-online.service   enabled-runtime
+systemd-networkd.service               enabled-runtime
+systemd-poweroff.service               static         
+systemd-quotacheck.service             static         
+systemd-random-seed.service            static         
+systemd-reboot.service                 static         
+systemd-remount-fs.service             static         
+systemd-resolved.service               [0;1;32menabled        [0m
+systemd-rfkill.service                 static         
+systemd-suspend-then-hibernate.service static         
+systemd-suspend.service                static         
+systemd-sysctl.service                 static         
+systemd-timedated.service              static         
+systemd-timesyncd.service              [0;1;32menabled        [0m
+systemd-tmpfiles-clean.service         static         
+systemd-tmpfiles-setup-dev.service     static         
+systemd-tmpfiles-setup.service         static         
+systemd-udev-settle.service            static         
+systemd-udev-trigger.service           static         
+systemd-udevd.service                  static         
+systemd-update-utmp-runlevel.service   static         
+systemd-update-utmp.service            static         
+systemd-user-sessions.service          static         
+systemd-volatile-root.service          static         
+udev.service                           static         
+ufw.service                            [0;1;32menabled        [0m
+umountfs.service                       [0;1;31mmasked         [0m
+umountnfs.service                      [0;1;31mmasked         [0m
+umountroot.service                     [0;1;31mmasked         [0m
+unattended-upgrades.service            [0;1;32menabled        [0m
+urandom.service                        static         
+ureadahead-stop.service                static         
+ureadahead.service                     [0;1;32menabled        [0m
+user@.service                          static         
+uuidd.service                          indirect       
+vgauth.service                         [0;1;32menabled        [0m
+vmtoolsd.service                       [0;1;32menabled        [0m
+x11-common.service                     [0;1;31mmasked         [0m
+zabbix-agent.service                   [0;1;32menabled        [0m
+zabbix-proxy.service                   [0;1;32menabled        [0m
+
+195 unit files listed.
