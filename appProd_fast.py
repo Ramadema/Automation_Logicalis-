@@ -34,7 +34,7 @@ HEADERS_BASE = {
 # Mover credenciales a variables de entorno si es posible
 LOGIN_CREDENCIALES = {
     "username": os.getenv("SGI_USER", "EXA53410"),
-    "password": os.getenv("SGI_PASS", "Agosto.23"),
+    "password": os.getenv("SGI_PASS", "Agosto.23*"),
 }
 
 # Ignorar validación SSL (entorno interno)
