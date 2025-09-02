@@ -94,21 +94,40 @@ async def consultar_alarmas(token, cell_id):
             return []
 
 # -------------------- PARTE 2: Giraweb -------------------- #
+# Prefijos por gerencia (Argentina + nuevas gerencias Uruguay y Paraguay)
 prefijos_por_gerencia = {
+    # Argentina
     "CFBA": ["CF"],
     "PACU": ["ME", "SJ", "SL", "COW", "SC", "CB", "TF", "RN", "NQ"],
-    "MED": ["CO", "ST", "SE", "CT", "TU", "JU", "STR", "CTR", "RJ"],
+    "MED":  ["CO", "ST", "SE", "CT", "TU", "JU", "STR", "CTR", "RJ"],
     "LSUR": ["BA", "SF", "CH", "CR", "FO", "MI", "SJ", "ER"],
-    "BLAP": ["BA", "PA", "PAR"]
+    "BLAP": ["BA", "PA", "PAR"],
+
+    # Uruguay
+    "URUG": ["MO", "PY", "SO", "AR", "MA", "RO", "LA", "TT", "TA", "CA"],
+
+    # Paraguay
+    "PARA": ["CG", "AM", "PG", "MS", "AP", "CI", "NE", "CZ", "CP", "IT", "SP", "GU", "PH", "CD", "AS", "BO"]
 }
 
+# URLs por gerencia (incluye URUG y PARA)
 urls_por_gerencia = {
+    # Argentina
     "CFBA": "http://10.92.62.254/giraweb/index-tab.php?gerencia=CFBA",
     "PACU": "http://10.92.62.254/giraweb/index-tab.php?gerencia=PACU",
     "MED":  "http://10.92.62.254/giraweb/index-tab.php?gerencia=MED",
     "LSUR": "http://10.92.62.254/giraweb/index-tab.php?gerencia=LSUR",
-    "BLAP": "http://10.92.62.254/giraweb/index-tab.php?gerencia=BLAP"
+    "BLAP": "http://10.92.62.254/giraweb/index-tab.php?gerencia=BLAP",
+
+    # Uruguay
+    "URUG": "http://10.92.62.254/giraweb/index-tab.php?gerencia=URUG",
+
+    # Paraguay
+    "PARA": "http://10.92.62.254/giraweb/index-tab.php?gerencia=PARA"
 }
+
+# Prefijos de teléfono a ignorar en la última columna (contacto/salida)
+PHONE_PREFIX_BLACKLIST = ["+54", "+598", "+595"]
 
 def limpiar(texto):
     return texto.strip().replace('\n', ' ').replace('\r', '')
@@ -133,14 +152,23 @@ def tiempo_en_dias(tiempo_texto):
     return dias + horas / 24 + minutos / 1440
 
 def es_fila_alarma_valida(columnas):
+    # Estructura esperada: 6 columnas; 0 = site_id, última = descripción/contacto
     if len(columnas) != 6:
         return False
+
     site_id = limpiar(columnas[0].get_text(strip=True)).upper()
     ultima_columna = limpiar(columnas[-1].get_text(strip=True)).lower()
+
+    # Validación de site_id: alfanumérico con letras y números
     if not (site_id.isalnum() and any(c.isalpha() for c in site_id) and any(c.isdigit() for c in site_id)):
         return False
-    if ultima_columna.startswith(("+54", "sin salida", "sms", "whatsapp")):
+
+    # Filtrar salidas no operativas o contactos telefónicos
+    if ultima_columna.startswith(("sin salida", "sms", "whatsapp")):
         return False
+    if any(ultima_columna.startswith(pref.lower()) for pref in PHONE_PREFIX_BLACKLIST):
+        return False
+
     return True
 
 def buscar_en_gerencia(nombre, url, session, cell_id_buscado):
@@ -224,7 +252,7 @@ def buscar_datos_oos(session, url, cell_id_buscado):
         return resultados
 
     except Exception as e:
-        print(f"\u26a0\ufe0f Error en buscar_datos_oos: {e}")
+        print(f"⚠️ Error en buscar_datos_oos: {e}")
         return []
 
 # -------------------- COORDINADOR -------------------- #
@@ -255,7 +283,7 @@ async def main():
             break
 
     if not gerencia_objetivo:
-        print(json.dumps({"error": "No se encontr\u00f3 informaci\u00f3n v\u00e1lida para ese Cell-ID"}, ensure_ascii=False))
+        print(json.dumps({"error": "No se encontró información válida para ese Cell-ID"}, ensure_ascii=False))
         return
 
     session = requests.Session()
@@ -273,7 +301,7 @@ async def main():
             json.dump(salida, f, indent=4, ensure_ascii=False)
         print(json.dumps(salida, ensure_ascii=False))
     else:
-        print(json.dumps({"error": "No se encontr\u00f3 informaci\u00f3n v\u00e1lida para ese Cell-ID"}, ensure_ascii=False))
+        print(json.dumps({"error": "No se encontró información válida para ese Cell-ID"}, ensure_ascii=False))
 
 # --- RUN ---
 if __name__ == "__main__":
