@@ -10,7 +10,6 @@ import asyncio
 import aiohttp
 from lxml import html as lxml_html
 from pathlib import Path
-from typing import Optional, List, Dict, Any
 
 # --- Compatibilidad con aiohttp viejo (3.0.1 no trae ClientTimeout)
 try:
@@ -25,7 +24,7 @@ LOGIN_URL = "https://sgi.claro.amx/auth/local"
 GRAPHQL_URL = "https://sgi.claro.amx/api/graphql"
 
 HEADERS_BASE = {
-    "User-Agent": "Mozilla/5.0 (OptimizedScraper/1.0)",
+    "User-Agent": "Mozilla/5.0",
     "Content-Type": "application/json",
     "Origin": "https://sgi.claro.amx",
     "Accept": "application/json",
@@ -42,22 +41,24 @@ ssl_context = ssl.create_default_context()
 ssl_context.check_hostname = False
 ssl_context.verify_mode = ssl.CERT_NONE
 
-# Timeout por request (objeto en nuevos aiohttp o número en 3.0.1)
+# Timeouts (en 3.0.1 se pasa como float/int)
 if HAS_CLIENT_TIMEOUT:
-    TIMEOUT_SGI = ClientTimeout(total=10)
+    TIMEOUT_SGI = ClientTimeout(total=12)
     TIMEOUT_GIRA = ClientTimeout(total=12)
 else:
-    TIMEOUT_SGI = 10
+    TIMEOUT_SGI = 12
     TIMEOUT_GIRA = 12
 
 def timeout_kwargs(value):
-    # En aiohttp nuevo acepta ClientTimeout; en 3.0.1 acepta float/int
     return {"timeout": value}
 
 # Cache de HTML en disco (por gerencia). TTL en segundos
 GIRA_CACHE_TTL = int(os.getenv("GIRA_CACHE_TTL", "600"))
 CACHE_DIR = Path(os.getenv("GIRA_CACHE_DIR", "/tmp"))
 CACHE_DIR.mkdir(parents=True, exist_ok=True)
+
+# Ventana de gracia para preferir SGI aunque Giraweb termine primero (ms)
+SGI_GRACE_MS = int(os.getenv("SGI_GRACE_MS", "1200"))
 
 QUERY = """
 query EVENTS_AND_DEVICES($client_id: String!) {
@@ -72,20 +73,34 @@ query EVENTS_AND_DEVICES($client_id: String!) {
 }
 """
 
+# -------------------- RUTEO POR GERENCIA -------------------- #
+# Incluye Argentina, Uruguay (URUG) y Paraguay (PARA)
 prefijos_por_gerencia = {
+    # Argentina
     "CFBA": ["CF"],
     "PACU": ["ME", "SJ", "SL", "COW", "SC", "CB", "TF", "RN", "NQ"],
     "MED":  ["CO", "ST", "SE", "CT", "TU", "JU", "STR", "CTR", "RJ"],
     "LSUR": ["BA", "SF", "CH", "CR", "FO", "MI", "SJ", "ER"],
     "BLAP": ["BA", "PA", "PAR"],
+
+    # Uruguay
+    "URUG": ["MO", "PY", "SO", "AR", "MA", "RO", "LA", "TT", "TA", "CA"],
+
+    # Paraguay
+    "PARA": ["CG", "AM", "PG", "MS", "AP", "CI", "NE", "CZ", "CP", "IT", "SP", "GU", "PH", "CD", "AS", "BO"]
 }
 
 urls_por_gerencia = {
+    # Argentina
     "CFBA": "http://10.92.62.254/giraweb/index-tab.php?gerencia=CFBA",
     "PACU": "http://10.92.62.254/giraweb/index-tab.php?gerencia=PACU",
     "MED":  "http://10.92.62.254/giraweb/index-tab.php?gerencia=MED",
     "LSUR": "http://10.92.62.254/giraweb/index-tab.php?gerencia=LSUR",
     "BLAP": "http://10.92.62.254/giraweb/index-tab.php?gerencia=BLAP",
+
+    # Uruguay y Paraguay
+    "URUG": "http://10.92.62.254/giraweb/index-tab.php?gerencia=URUG",
+    "PARA": "http://10.92.62.254/giraweb/index-tab.php?gerencia=PARA"
 }
 
 # -------------------- HELPERS -------------------- #
@@ -119,13 +134,18 @@ def tiempo_en_dias(tiempo_texto):
     return dias + horas / 24.0 + minutos / 1440.0
 
 def es_fila_alarma_valida_from_texts(texts):
+    """
+    Valida filas de la tabla de Alarmas para excluir entradas de Logueos/Contacto.
+    Requiere al menos 6 columnas. Filtra última columna si comienza con:
+    +54 (AR), +598 (UY), +595 (PY), 'sin salida', 'sms', 'whatsapp'.
+    """
     if len(texts) < 6:
         return False
     site_id = limpiar(texts[0]).upper()
     last_col = limpiar(texts[-1]).lower()
     if not (site_id.isalnum() and any(c.isalpha() for c in site_id) and any(c.isdigit() for c in site_id)):
         return False
-    if last_col.startswith(("+54", "sin salida", "sms", "whatsapp")):
+    if last_col.startswith(("+54", "+598", "+595", "sin salida", "sms", "whatsapp")):
         return False
     return True
 
@@ -191,7 +211,7 @@ def make_session_gira():
 # -------------------- SGI (async) -------------------- #
 async def sgi_query(cell_id_sgi):
     async with make_session_sgi() as session:
-        # login
+        # Login
         try:
             async with session.post(LOGIN_URL, json=LOGIN_CREDENCIALES, **timeout_kwargs(TIMEOUT_SGI)) as r:
                 if r.status != 200:
@@ -311,7 +331,7 @@ def parse_giraweb(html_text, cell_id_buscado):
     return resultados, datos_oos
 
 async def giraweb_flow(gerencia, url, cell_id_buscado):
-    # cache
+    # Cache
     html_text = None
     if GIRA_CACHE_TTL > 0:
         cached = load_cache_if_fresh(gerencia, GIRA_CACHE_TTL)
@@ -349,12 +369,13 @@ async def main():
         return
     url_gira = urls_por_gerencia[gerencia_objetivo]
 
+    # Disparamos SGI y Giraweb en paralelo
     sgi_task = asyncio.ensure_future(sgi_query(cell_id_sgi))
     gira_task = asyncio.ensure_future(giraweb_flow(gerencia_objetivo, url_gira, cell_id_giraweb))
 
     done, pending = await asyncio.wait({sgi_task, gira_task}, return_when=asyncio.FIRST_COMPLETED)
 
-    # Si SGI terminó primero y trajo resultados
+    # Caso 1: SGI terminó primero y trae datos -> cancelar Giraweb y devolver SGI
     if sgi_task in done:
         sgi_result = sgi_task.result() or []
         if sgi_result:
@@ -365,13 +386,45 @@ async def main():
                 except asyncio.CancelledError:
                     pass
             try:
-                Path("registros_cellid.json").write_text(json.dumps(sgi_result, indent=2, ensure_ascii=False), encoding="utf-8")
+                Path("registros_cellid.json").write_text(
+                    json.dumps(sgi_result, indent=2, ensure_ascii=False), encoding="utf-8"
+                )
             except Exception:
                 pass
             print(json.dumps(sgi_result, ensure_ascii=False))
             return
 
-    # Usar Giraweb
+    # Caso 2: Giraweb terminó primero -> esperar breve GRACE por SGI para preferirlo si llega con datos
+    if gira_task in done and sgi_task not in done and SGI_GRACE_MS > 0:
+        try:
+            await asyncio.wait({sgi_task}, timeout=SGI_GRACE_MS / 1000.0)
+        except Exception:
+            pass
+
+    # Si SGI ya respondió ahora con datos, usarlo
+    if sgi_task.done():
+        try:
+            sgi_result = sgi_task.result() or []
+        except Exception:
+            sgi_result = []
+        if sgi_result:
+            # cancelar gira si sigue corriendo
+            if not gira_task.done():
+                gira_task.cancel()
+                try:
+                    await gira_task
+                except asyncio.CancelledError:
+                    pass
+            try:
+                Path("registros_cellid.json").write_text(
+                    json.dumps(sgi_result, indent=2, ensure_ascii=False), encoding="utf-8"
+                )
+            except Exception:
+                pass
+            print(json.dumps(sgi_result, ensure_ascii=False))
+            return
+
+    # Caso 3: usar Giraweb
     if not gira_task.done():
         try:
             gira_res = await gira_task
@@ -383,7 +436,9 @@ async def main():
     salida = (gira_res or {}).get("salida") if gira_res else None
     if salida:
         try:
-            Path("registros_cellid.json").write_text(json.dumps(salida, indent=2, ensure_ascii=False), encoding="utf-8")
+            Path("registros_cellid.json").write_text(
+                json.dumps(salida, indent=2, ensure_ascii=False), encoding="utf-8"
+            )
         except Exception:
             pass
         print(json.dumps(salida, ensure_ascii=False))
@@ -400,4 +455,3 @@ if __name__ == "__main__":
         loop.run_until_complete(main())
     except KeyboardInterrupt:
         pass
-
