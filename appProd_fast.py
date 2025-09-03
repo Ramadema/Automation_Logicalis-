@@ -57,7 +57,7 @@ GIRA_CACHE_TTL = int(os.getenv("GIRA_CACHE_TTL", "600"))
 CACHE_DIR = Path(os.getenv("GIRA_CACHE_DIR", "/tmp"))
 CACHE_DIR.mkdir(parents=True, exist_ok=True)
 
-# Ventana de gracia para preferir SGI aunque Giraweb termine primero (ms)
+# Ventana de gracia para preferir SGI aunque Giraweb termine primero
 SGI_GRACE_MS = int(os.getenv("SGI_GRACE_MS", "1200"))
 
 QUERY = """
@@ -170,7 +170,7 @@ async def fetch_with_retries(session, url, timeout_value, retries=2):
             last_exc = e
         if attempt < retries:
             await asyncio.sleep(0.4 * (2 ** attempt))
-    print(u"⚠️  fetch error %s: %s" % (url, last_exc), file=sys.stderr)
+    print(u"  fetch error %s: %s" % (url, last_exc), file=sys.stderr)
     return None
 
 def cache_path_for_gerencia(gerencia):
@@ -331,7 +331,7 @@ def parse_giraweb(html_text, cell_id_buscado):
     return resultados, datos_oos
 
 async def giraweb_flow(gerencia, url, cell_id_buscado):
-    # Cache
+    # Cache o backup
     html_text = None
     if GIRA_CACHE_TTL > 0:
         cached = load_cache_if_fresh(gerencia, GIRA_CACHE_TTL)
@@ -352,7 +352,7 @@ async def giraweb_flow(gerencia, url, cell_id_buscado):
         salida.append({"sitios_oos": datos_oos})
     return {"salida": salida}
 
-# -------------------- MAIN COORDINADOR -------------------- #
+# -------------------- MAIN CONTROLLER -------------------- #
 async def main():
     if len(sys.argv) < 2:
         print(json.dumps([], ensure_ascii=False))
@@ -394,21 +394,21 @@ async def main():
             print(json.dumps(sgi_result, ensure_ascii=False))
             return
 
-    # Caso 2: Giraweb terminó primero -> esperar breve GRACE por SGI para preferirlo si llega con datos
+    # Caso 2: Giraweb terminó primero -> tiene que esperar una ventana por SGI para preferirlo si llega con datos
     if gira_task in done and sgi_task not in done and SGI_GRACE_MS > 0:
         try:
             await asyncio.wait({sgi_task}, timeout=SGI_GRACE_MS / 1000.0)
         except Exception:
             pass
 
-    # Si SGI ya respondió ahora con datos, usarlo
+    # usa los datos en el caso que SGI responda
     if sgi_task.done():
         try:
             sgi_result = sgi_task.result() or []
         except Exception:
             sgi_result = []
         if sgi_result:
-            # cancelar gira si sigue corriendo
+            # Se cancela gira si sigue corriendo
             if not gira_task.done():
                 gira_task.cancel()
                 try:
